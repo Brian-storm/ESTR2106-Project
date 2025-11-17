@@ -55,6 +55,7 @@ function App() {
   );
 }
 
+// Original code given by "npm create-react-app"
 // function App() {
 //   return (
 //     <div className="App">

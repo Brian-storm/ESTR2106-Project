@@ -2,11 +2,10 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const path = require('path');
-const axios = require('axios');
 const { XMLParser } = require('fast-xml-parser');
 const fs = require('fs');
 
-mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // put your own database link here
+mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // idk how to do mongodb, need help
 const db = mongoose.connection;
 
 // Upon connection failure
@@ -100,7 +99,7 @@ app.get('/', (req, res) => {
     });
 })
 
-// Pull data from gov dataset XML link
+// // Middleware: FetchXML - Fetch data from gov dataset XML link
 async function FetchXML(req, res, next) {
     const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
     const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
@@ -167,6 +166,7 @@ async function FetchXML(req, res, next) {
     }
 }
 
+// use FetchXML to send the gov data to fronend for rendering
 app.use('/api/fetchEvents', FetchXML);
 app.get('/api/fetchEvents', (req, res) => {
     console.log("Returning venue event pairs...");
@@ -176,12 +176,13 @@ app.get('/api/fetchEvents', (req, res) => {
     res.json(req.venueEventsPairs);
 })
 
-// Specific routes first
+// Send index.html as response to render web page
 app.get('/', (req, res) => {
     console.log(path.resolve(__dirname, '../public/index.html'));
     res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });
 
+// Below are not yet done, arguments are placeholder only
 app.get('/location', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });
@@ -196,14 +197,7 @@ app.all('*path', (req, res) => {
 });
 
 
-// // handle ALL requests
-// app.use((req, res) => {
-//   // send this to client
-//   let message = "Hello World!";
-//   message += `<br>current dirname: ${__dirname}`;
-//   message += `<br>user link: ${req.path}`;
-//   res.send(message);
-// })
 
-// listen to port 3000
+
+// listen to port 5000
 const server = app.listen(5000);
