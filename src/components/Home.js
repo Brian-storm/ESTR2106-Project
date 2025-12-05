@@ -1,43 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-class Home extends React.Component {
-  constructor() {
-    super();
-    this.state = { response: [] , selectedVenues: []};
-  }
+function Home() {
+    const [response, setResponse] = useState([]);
+    const [selectedVenues, setSelectedVenues] = useState([]);
 
-  componentDidMount() {
-    console.log("running...")
-    fetch("/api/fetchEvents")
-      .then(response => response.json())
-      .then(data => {
-        console.log("fetched");
-        console.log(data);
-        this.setState({ response: data }, this.findRandomVenues);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        this.setState({ response: [] });
-      });
-  }
+    useEffect(() => {
+        console.log("running...at Home");
+        fetch("/api/fetchEvents")
+            .then(response => response.json())
+            .then(data => {
+                console.log("fetched");
+                console.log(data);
+                setResponse(data);
+                findRandomVenues(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                setResponse([]);
+            });
+    }, []);
 
-  findRandomVenues = () => {
-    if (!this.state.response.length) return;
+    const findRandomVenues = (data) => {
+        if (!data || !Array.isArray(data)) return;
 
-    const shuffled = [...this.state.response].sort(() => Math.random() - 0.5);  // Shuffle and take first 10
-    const randomVenues = shuffled.slice(0, 10);
-    this.setState({ selectedVenues: randomVenues.map(elem => elem.venueNameE) });
-  }
+        const shuffled = [...data].sort(() => Math.random() - 0.5);  // Shuffle and take first 10
+        const randomVenues = shuffled.slice(0, 10);
+        setSelectedVenues(randomVenues.map(elem => elem.venueNameE));
+    }
 
-  render() {
     return (
-      <div className="container mt-4">
-        <h2>Home Page</h2>
-        <pre>Randomised 10 (only their English name listed): {JSON.stringify(this.state.selectedVenues, null, 2)}</pre>
-        <pre>Original {JSON.stringify(this.state.response, null, 2)}</pre>
-      </div>
+        <div className="container mt-4">
+            <h2>Home Page</h2>
+            <pre>Randomised 10 (only their English name listed): {JSON.stringify(selectedVenues, null, 2)}</pre>
+            <pre>Original {JSON.stringify(response, null, 2)}</pre>
+        </div>
     );
-  }
 }
 
 export default Home;
