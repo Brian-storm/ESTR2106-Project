@@ -9,9 +9,7 @@ Goal: A Web App to check information on some locations.
 * Single Page Application, without refreshing the page for any internal links.
 
 ## 1. Users 
-– only authenticated users have access to the app’s contents. A user is recognized
-using a username and password pair. The user will be able to perform the “user actions”,
-which are specified on the next page.
+Only authenticated users have access to the app’s contents. A user is recognized using a username and password pair. The user will be able to perform the “user actions”, which are specified on the next page.
 
 User actions:
 1. List all locations in a table as links to single locations and allow sorting the table with
@@ -33,8 +31,7 @@ updates to the location list and map without page refresh.
 6. See the username in the top-right of screen and be able to log out.
 
 ## 2. Admins
-– admins will be able to perform arbitrary CRUD actions to the location data
-and the user data on your database.
+Admins will be able to perform arbitrary CRUD actions to the location data and the user data on your database.
 
 Admin actions:
 1. CRUD stored event details in the local database.
