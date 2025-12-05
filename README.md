@@ -1,3 +1,73 @@
+## Dear Groupmates, here are the project requirements
+Note: Minimum requriements listed as follows, more features and extras are welcome if you see fit
+Note: Feel free to use extra APIsm but NEVER use anything more than Free Tier.
+
+## Overview of our Web App (2 modes of access):
+Goal: A Web App to check information on some locations.
+* Allow Users and Admin will be able to log in and perform certain actions. 
+* Retrieve location details from an open dataset. 
+* Single Page Application, without refreshing the page for any internal links.
+
+## 1. Users 
+– only authenticated users have access to the app’s contents. A user is recognized
+using a username and password pair. The user will be able to perform the “user actions”,
+which are specified on the next page.
+
+User actions:
+1. List all locations in a table as links to single locations and allow sorting the table with
+location names, distances, and the number of events at venue.
+
+2. Show all locations in a map, with links to each single location (suggested APIs: Google
+Maps, OpenStreetMap or MapBox).
+
+3. Filter locations by keywords, areas, and distance (e.g., within x km), with dynamic
+updates to the location list and map without page refresh.
+
+4. A separate view for one single location, containing:
+    a. A map showing the location.
+    b. The location details.
+    c. User comments, where users can add new comments seen by all other users.
+
+5. Add location into a list of user’s favourite locations and see the list in another view.
+
+6. See the username in the top-right of screen and be able to log out.
+
+## 2. Admins
+– admins will be able to perform arbitrary CRUD actions to the location data
+and the user data on your database.
+
+Admin actions:
+1. CRUD stored event details in the local database.
+    a. We will not test other features (e.g., map, comments) if deleting an existing location.
+
+2. CRUD user data (username and password only) in the local database.
+    a. We will not test other features (e.g., comments) if deleting an existing user.
+
+3. Log out as admin.
+
+## 3. Non-user
+Non-user actions:
+1. Log in as user with username and password.
+2. Log in as admin using username and password.
+
+
+## Requirements
+A. For data:
+1. XML format
+2. Pick only 10 venues (each host >=3 events)
+3. Handle the following data: title, venue, date/time, description, presenter
+
+B. Client Side
+1. Get the real time information from API to database only once when the user logins and loads the page
+* Visits to all different views should be reserved in the browser history, with a proper URL.
+
+C. Server Side
+1. design the data schemas and models storing (caching) items. 
+    - locations: Location name, Latitude and longitude, (and more if you see fit)
+    - English data
+* Visits to all different views should be reserved in the browser history, with a proper URL.
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
