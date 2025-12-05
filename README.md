@@ -1,68 +1,128 @@
-## Dear Groupmates, here are the project requirements
-Note: Minimum requriements listed as follows, more features and extras are welcome if you see fit
-Note: Feel free to use extra APIsm but NEVER use anything more than Free Tier.
+# **Project Requirements Document**
 
-## Overview of our Web App (2 modes of access):
-Goal: A Web App to check information on some locations.
-* Allow Users and Admin will be able to log in and perform certain actions. 
-* Retrieve location details from an open dataset. 
-* Single Page Application, without refreshing the page for any internal links.
+## **Project Overview**
+**Goal:** A Web App to check information on locations with two access modes (User & Admin).
 
-## 1. Users 
-Only authenticated users have access to the app’s contents. A user is recognized using a username and password pair. The user will be able to perform the “user actions”, which are specified on the next page.
+**Notes:**
+- Minimum requirements listed below; additional features are welcome
+- Feel free to use extra APIs, but **NEVER** exceed Free Tier limits
 
-User actions:
-1. List all locations in a table as links to single locations and allow sorting the table with
-location names, distances, and the number of events at venue.
+---
 
-2. Show all locations in a map, with links to each single location (suggested APIs: Google
-Maps, OpenStreetMap or MapBox).
+## **App Features Overview**
 
-3. Filter locations by keywords, areas, and distance (e.g., within x km), with dynamic
-updates to the location list and map without page refresh.
+### **Web App Structure:**
+1. **Single Page Application** (no page refresh for internal links)
+2. **Authentication Required** for accessing app contents
+3. **Location Information** retrieved from an open dataset
 
-4. A separate view for one single location, containing:
-    a. A map showing the location.
-    b. The location details.
-    c. User comments, where users can add new comments seen by all other users.
+---
 
-5. Add location into a list of user’s favourite locations and see the list in another view.
+## **1. USER FUNCTIONALITY**
 
-6. See the username in the top-right of screen and be able to log out.
+### **Authentication:**
+- Users log in with username/password pair
+- Only authenticated users can access app contents
 
-## 2. Admins
-Admins will be able to perform arbitrary CRUD actions to the location data and the user data on your database.
+### **User Actions:**
 
-Admin actions:
-1. CRUD stored event details in the local database.
-    a. We will not test other features (e.g., map, comments) if deleting an existing location.
+#### **1. Location Table View**
+- List all locations in a table format
+- Each location is a link to its single location page
+- Sortable columns:
+  - Location names
+  - Distances
+  - Number of events at venue
 
-2. CRUD user data (username and password only) in the local database.
-    a. We will not test other features (e.g., comments) if deleting an existing user.
+#### **2. Map View**
+- Show all locations on a map
+- Each location marker links to its single location page
+- **Suggested APIs:** Google Maps, OpenStreetMap, or MapBox
 
-3. Log out as admin.
+#### **3. Filtering System**
+- Filter locations by:
+  - Keywords
+  - Areas
+  - Distance (e.g., "within X km")
+- **Dynamic updates** to both list and map without page refresh
 
-## 3. Non-user
-Non-user actions:
-1. Log in as user with username and password.
-2. Log in as admin using username and password.
+#### **4. Single Location View**
+**Contains:**
+a. Map showing the specific location
+b. Location details
+c. User comments section:
+   - Users can add new comments
+   - Comments visible to all other users
 
+#### **5. Favorites System**
+- Add locations to user's favorites list
+- View favorites in a separate page
 
-## Requirements
-A. For data:
-1. XML format
-2. Pick only 10 venues (each host >=3 events)
-3. Handle the following data: title, venue, date/time, description, presenter
+#### **6. User Interface**
+- Display username in top-right corner
+- Logout functionality
 
-B. Client Side
-1. Get the real time information from API to database only once when the user logins and loads the page
-* Visits to all different views should be reserved in the browser history, with a proper URL.
+---
 
-C. Server Side
-1. design the data schemas and models storing (caching) items. 
-    - locations: Location name, Latitude and longitude, (and more if you see fit)
-    - English data
-* Visits to all different views should be reserved in the browser history, with a proper URL.
+## **2. ADMIN FUNCTIONALITY**
+
+### **Admin Actions:**
+
+#### **1. Location CRUD Operations**
+- **Create, Read, Update, Delete** event details in local database
+- **Note:** If deleting a location, other features (map, comments) won't be tested
+
+#### **2. User Management**
+- **Create, Read, Update, Delete** user data (username and password only)
+- **Note:** If deleting a user, other features (comments) won't be tested
+
+#### **3. Admin Interface**
+- Logout functionality
+
+---
+
+## **3. NON-USER ACCESS**
+
+### **Actions for Unauthenticated Users:**
+1. Log in as user (username & password)
+2. Log in as admin (username & password)
+
+---
+
+## **TECHNICAL REQUIREMENTS**
+
+### **A. Data Requirements**
+1. **Format:** XML format
+2. **Data Selection:**
+   - Pick only 10 venues
+   - Each venue must host ≥3 events
+3. **Required Data Fields:**
+   - Title
+   - Venue
+   - Date/Time
+   - Description
+   - Presenter
+
+### **B. Client-Side Requirements**
+1. **Data Fetching:**
+   - Get real-time information from API → database
+   - Fetch only once when user logs in/loads page
+2. **Browser History:**
+   - All view visits should be recorded in browser history
+   - Each view must have a proper URL
+
+### **C. Server-Side Requirements**
+1. **Database Design:**
+   - Design data schemas/models for caching items
+   - **Locations Schema Must Include:**
+     - Location name
+     - Latitude and longitude
+     - (Additional fields optional)
+   - **Language:** English data only
+2. **URL Routing:**
+   - All view visits should be recorded in browser history
+   - Each view must have a proper URL
+
 
 
 # Getting Started with Create React App
