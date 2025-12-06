@@ -8,6 +8,14 @@ const session = require('express-session')
 const PORT = 5000;
 const app = express();
 
+
+mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // idk how to do mongodb, need help
+const db = mongoose.connection;
+
+// Upon connection failure
+db.on('error', console.error.bind(console, 'Connection error:'));
+
+
 // Development Stage:
 const debug = 1;  // used to toggle console.log for debugging
 
@@ -21,38 +29,32 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Cookies
-const initCookie = (req, res, next) => { // a middleware
-    if (req.cookies['sessionId'] == undefined) {
-        res.cookie('sessionId', `session-${Date.now()}-${Math.random().toString(16).substr(2, 9)}`, {
-            maxAge: 1000 * 60 * 5,
-            httpOnly: true
-        })
-    }
-    next();
-}
-app.use(initCookie);
+// const initCookie = (req, res, next) => { // a middleware
+//     if (req.cookies['sessionId'] == undefined) {
+//         res.cookie('sessionId', `session-${Date.now()}-${Math.random().toString(16).substr(2, 9)}`, {
+//             maxAge: 1000 * 60 * 5,
+//             httpOnly: true
+//         })
+//     }
+//     next();
+// }
+// app.use(initCookie);
 
-// Sessions
-const sessions = {};
-const createSession = (userId, username, role) => {
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const expiresAt = Date.now() + 30 * 60 * 1000; // 30 min
+// // Sessions
+// const sessions = {};
+// const createSession = (userId, username, role) => {
+//     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+//     const expiresAt = Date.now() + 30 * 60 * 1000; // 30 min
 
-    sessions[sessionId] = {
-        userId,
-        username,
-        role,
-        expiresAt
-    };
+//     sessions[sessionId] = {
+//         userId,
+//         username,
+//         role,
+//         expiresAt
+//     };
 
-    return { sessionId, expiresAt };
-};
-
-mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // idk how to do mongodb, need help
-const db = mongoose.connection;
-
-// Upon connection failure
-db.on('error', console.error.bind(console, 'Connection error:'));
+//     return { sessionId, expiresAt };
+// };
 
 // Mongoose Models
 // Model 1: Event
@@ -121,26 +123,34 @@ db.once('open', function () {
 
 })
 
-
-
-// Server Side Scripts
-
-// Page Rendering
+// Static file
 app.use(express.static(path.resolve(__dirname, '../public')));
 
-// Cookies
-app.get('/', (req, res) => {
-    res.cookie('visits', '0', {
-        maxAge: '1000' + "0000000",
-        expires: new Date(Date.now() + '3600000')
-    });
-})
+// Session
 app.use(session({
     secret: 'abc123',
-    cpploe: { maxAge: 1000 * 60 * 5 }  // expires in 5 min
-}))
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 1000 * 60 * 5,  // 5 minutes
+        httpOnly: true,
+    }
+}));
 
-// Middleware: FetchXML - Fetch data from gov dataset XML link
+// Check Session
+const checkSession = (req, res, next) => {
+    if (req.session && req.session.userId) {
+        req.user = {
+            userId: req.session.userId,
+            username: req.session.username,
+            role: req.session.role
+        };
+    }
+    next();
+};
+app.use(checkSession);
+
+// FetchXML - Fetch data from gov dataset XML link
 async function FetchXML(req, res, next) {
     const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
     const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
@@ -208,53 +218,39 @@ async function FetchXML(req, res, next) {
         res.status(500).json({ error: 'Failed to fetch events data' });
     }
 }
+app.use('/api/fetchEvents', FetchXML);  // use FetchXML to send the gov data to fronend for rendering
 
-// use FetchXML to send the gov data to fronend for rendering
-app.use('/api/fetchEvents', FetchXML);
-app.get('/api/fetchEvents', (req, res) => {
-    console.log("Returning venue event pairs...");
-    console.log(JSON.stringify(req.venueEventsPairs));
 
-    res.setHeader('Content-Type', 'application/json');
-    res.json(req.venueEventsPairs);
+
+// Routes
+app.get('/', (req, res) => {
+    // Set Cookie
+    res.cookie('visits', '0', {
+        maxAge: '1000' + "0000000",
+        expires: new Date(Date.now() + '3600000')
+    });
+    
+    // Send index.html as response to render web page
+    res.sendFile(path.resolve(__dirname, '../public/index.html'));
+});
+
+// Check Authentication
+app.get('/api/check-auth', (req, res) => {
+    if (req.session && req.session.userId) {
+        res.json({
+            userId: req.session.userId,
+            username: req.session.username,
+            role: req.session.role
+        });
+    } else {
+        res.status(401).json({
+            success: false,
+            message: "Not authenticated"
+        });
+    }
 })
 
-const checkSession = (req, res, next) => {
-    const sessionId = req.cookies.sessionId;
-    
-    if (!sessionId) {
-        return res.status(401).json({ 
-            success: false, 
-            message: 'No sessionId in cookie!' 
-        });
-    }
-    
-    const session = sessions[sessionId];
-    
-    if (!session) {
-        return res.status(401).json({ 
-            success: false, 
-            message: 'No sessionId in server!' 
-        });
-    }
-    
-    if (session.expiresAt < Date.now()) {
-        delete sessions[sessionId];
-        return res.status(401).json({ 
-            success: false, 
-            message: 'Session expired' 
-        });
-    }
-    
-    req.user = {
-        userId: session.userId,
-        username: session.username,
-        role: session.role
-    };
-    
-    next();
-};
-
+// Signup
 app.post('/api/signup', async (req, res) => {
     try {
         const username = req.body.username;
@@ -292,6 +288,7 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
+// Login
 app.post('/api/login', async (req, res) => {
     try {
         const username = req.body.username;
@@ -314,21 +311,16 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        const { sessionId, expiresAt } = createSession(user._id, user.username, user.role);
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.role = user.role;
 
-        // Set cookie
-        res.cookie('sessionId', sessionId, {
-            httpOnly: true, // (security)
-            secure: false,
-            maxAge: 30 * 60 * 1000, // 30 min
-            path: '/' // Available on all routes
-        });
+        console.log('Session created successfully for user:', username);
 
-        console.log('Cookie created successfully for user:', username);
-
-        res.json({
+        res.status(200).json({
             success: true,
             user: {
+                userId: user._id,
                 username,
                 role: user.role,
                 permission: user.role === 'admin' ? 7 : 1
@@ -344,42 +336,37 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.post('/api/logout', checkSession, (req, res) => {
-    const sessionId = req.cookies.sessionId;
-    
-    // Delete session
-    delete sessions[sessionId];
-    
-    // Clear cookie
-    res.clearCookie('sessionId', {
-        httpOnly: true,
-        path: '/'
+// Logout
+app.post('/api/logout', (req, res) => {
+    // Destroy session
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Logout failed' 
+            });
+        }
+        
+        // Clear session cookie
+        res.clearCookie('connect.sid', {
+            path: '/'
+        });
+        
+        res.json({ 
+            success: true, 
+            message: 'Logged out' 
+        });
     });
-    
-    console.log('Logged out:', req.user.username);
-    
-    res.json({ success: true, message: 'Logged out' });
 });
 
-// Send index.html as response to render web page
-app.get('/*path', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../public/index.html'));
-});
+// Fetch data
+app.get('/api/fetchEvents', (req, res) => {
+    console.log("Returning venue event pairs...");
+    console.log(JSON.stringify(req.venueEventsPairs));
 
-// Below are not yet done, arguments are placeholder only
-app.get('/location', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../public/index.html'));
-});
-
-app.get('/event', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../public/index.html'));
-});
-
-// Catch-all for other SPA routes
-app.all('*path', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../public/index.html'));
-});
-
+    res.setHeader('Content-Type', 'application/json');
+    res.json(req.venueEventsPairs);
+})
 
 
 // For Testing Purpose
