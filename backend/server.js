@@ -28,34 +28,6 @@ if (development) {
 app.use(express.json());
 app.use(cookieParser());
 
-// Cookies
-// const initCookie = (req, res, next) => { // a middleware
-//     if (req.cookies['sessionId'] == undefined) {
-//         res.cookie('sessionId', `session-${Date.now()}-${Math.random().toString(16).substr(2, 9)}`, {
-//             maxAge: 1000 * 60 * 5,
-//             httpOnly: true
-//         })
-//     }
-//     next();
-// }
-// app.use(initCookie);
-
-// // Sessions
-// const sessions = {};
-// const createSession = (userId, username, role) => {
-//     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-//     const expiresAt = Date.now() + 30 * 60 * 1000; // 30 min
-
-//     sessions[sessionId] = {
-//         userId,
-//         username,
-//         role,
-//         expiresAt
-//     };
-
-//     return { sessionId, expiresAt };
-// };
-
 // Mongoose Models
 // Model 1: Event
 const EventSchema = mongoose.Schema({
@@ -81,17 +53,17 @@ const Event = mongoose.model("Event", EventSchema);
 
 // Model 2: Location
 const LocationSchema = mongoose.Schema({
-    name: {
+    namee: {
         type: String,
-        required: [true, "Name is required"]
     },
-    lattitude: {
-        type: Number,
-        required: [true, "Latitude is required"]
+    namec: {
+        type:String
     },
-    longtitude: {
+    latitude: {
         type: Number,
-        required: [true, "Longtitude is required"]
+    },
+    longitude: {
+        type: Number,
     }
 })
 const Location = mongoose.model("Location", LocationSchema);
@@ -130,6 +102,7 @@ app.use(express.static(path.resolve(__dirname, '../public')));
 app.use(session({
     secret: 'abc123',
     resave: false,
+    rolling: true,
     saveUninitialized: false,
     cookie: { 
         maxAge: 1000 * 60 * 5,  // 5 minutes
@@ -276,7 +249,13 @@ app.post('/api/signup', async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'User created successfully'
+            message: 'User created successfully',
+            user: {
+                userId: newUser._id,
+                username: newUser.username,
+                role: newUser.role,
+                permission: newUser.role === "admin"? 7: 1
+            }
         });
 
     } catch (error) {
@@ -359,6 +338,9 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
+
+
+// CRUD on data - Events and Locations
 // Fetch data
 app.get('/api/fetchEvents', (req, res) => {
     console.log("Returning venue event pairs...");
@@ -369,7 +351,34 @@ app.get('/api/fetchEvents', (req, res) => {
 })
 
 
-// For Testing Purpose
+app.post('/api/updateLocation', async (req, res) => {
+    console.log("Trying to write 10 random venues to db...")
+    
+    try {
+        for (const loc of req.body.selectedVenues) {
+            console.log(loc);
+            const newLocation = new Location({
+                namee: loc.venueNameE,
+                namec: loc.venueNameC || '',
+                latitude: loc.latitude || '',
+                longitude: loc.longitude || ''
+            });
+            await newLocation.save();
+        }
+        
+        res.status(201).send("Successfully updated venues");
+        
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).send("Failed to update venues");
+    }
+});
+
+
+
+
+
+// As Example || For Testing Purpose
 // CRUD of Event
 Event.find({})
     .then((data) => {

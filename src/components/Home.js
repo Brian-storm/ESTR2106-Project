@@ -20,18 +20,46 @@ function Home() {
             });
     }, []);
 
+    useEffect(() => {
+        if (selectedVenues.length > 0) {
+            updateRandomVenues();
+        }
+    }, [selectedVenues])
+
+    const updateRandomVenues = async () => {
+        const resp = await fetch("/api/updateLocation", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ selectedVenues: selectedVenues.map(venue => ({
+                    venueNameE: venue.venueNameE,
+                    venueNameC: venue.venueNameC,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude
+                })
+            )})
+        });
+        
+        if (resp.ok) {
+            console.log("Updated selectedVenues in db");
+        } else {
+            console.log("Failed to update selectedVenues in db");
+        }
+    }
+
     const findRandomVenues = (data) => {
         if (!data || !Array.isArray(data)) return;
 
         const shuffled = [...data].sort(() => Math.random() - 0.5);  // Shuffle and take first 10
         const randomVenues = shuffled.slice(0, 10);
-        setSelectedVenues(randomVenues.map(elem => elem.venueNameE));
+        setSelectedVenues(randomVenues);
     }
 
     return (
         <div className="container mt-4">
             <h2>Home Page</h2>
-            <pre>Randomised 10 (only their English name listed): {JSON.stringify(selectedVenues, null, 2)}</pre>
+            <pre>Randomised 10 (only their English name listed): {JSON.stringify(selectedVenues.map(elem => elem.venueNameE), null, 2)}</pre>
             <pre>Original {JSON.stringify(response, null, 2)}</pre>
         </div>
     );

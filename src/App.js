@@ -51,14 +51,14 @@ function App() {
         <div className="App">
             <nav className="navbar navbar-expand-lg navbar-light bg-light sticky-top">
                 <div className="container-fluid">
-                    <img className="mr-3" src='/icon.png' alt='webpage logo' style={{ maxWidth: "45px" }} />
-                    
-                    <ul className="navbar-nav">
-                        <li className="nav-item"><Link className="nav-link" to='/'>Home</Link></li>
-                        <li className="nav-item"><Link className="nav-link" to='/location'>Location list</Link></li>
-                        <li className="nav-item"><Link className="nav-link" to='/event'>Event list</Link></li>
-                        <li className="nav-item"><Link className="nav-link" to='/map'>Map</Link></li>
-                        <li className="nav-item"><Link className="nav-link" to='/favorite'>Favorite list</Link></li>
+                    <img className="mr-5" src='/icon.png' alt='webpage logo' style={{ maxWidth: "45px" }} />
+
+                    <ul className="navbar-nav" >
+                        <li className="nav-item ms-2"><Link className="nav-link" to='/'>Home</Link></li>
+                        <li className="nav-item ms-2"><Link className="nav-link" to='/location'>Location list</Link></li>
+                        <li className="nav-item ms-2"><Link className="nav-link" to='/event'>Event list</Link></li>
+                        <li className="nav-item ms-2"><Link className="nav-link" to='/map'>Map</Link></li>
+                        <li className="nav-item ms-2"><Link className="nav-link" to='/favorite'>Favorite list</Link></li>
                         {!user && (
                             <li className="nav-item">
                                 <Link className="nav-link" to='/login'>Log In</Link>
@@ -107,7 +107,7 @@ function App() {
                     user ? <Favorite /> : <Navigate to="/login" replace />
                 } />
                 <Route path='/login' element={
-                    user ? <Navigate to="/" replace /> : <Login onLogin={setUser} />
+                    user ? <Navigate to="/" replace /> : <Login setUser={setUser} />
                 } />
                 <Route path='*' element={
                     <Navigate to={user ? "/" : "/login"} replace />

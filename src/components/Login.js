@@ -53,6 +53,8 @@ function Login(props) {
                 
                 // Redirect or update parent component
                 if (props.setUser) {
+                    console.log(result);
+                    console.log(result.user);
                     props.setUser(result.user);
                 }
                 
