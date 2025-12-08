@@ -57,7 +57,7 @@ const LocationSchema = mongoose.Schema({
         type: String,
     },
     namec: {
-        type:String
+        type: String
     },
     latitude: {
         type: Number,
@@ -104,7 +104,7 @@ app.use(session({
     resave: false,
     rolling: true,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         maxAge: 1000 * 60 * 5,  // 5 minutes
         httpOnly: true,
     }
@@ -168,9 +168,36 @@ async function FetchXML(req, res, next) {
 
         let venueEventsPairs = [];
         for (let venue of req.venueData) {
+            // In each loop, match the corresponding events to the venue
             let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
-            console.log(venue?.['@_id'], filteredEvents);
+            
+            // Debug print
+            if (debug && 0) {
+                console.log(venue?.['@_id'], filteredEvents);
+            }
+
+            // Only venues with at least 3 events are considered
             if (filteredEvents.length >= 3) {
+
+                const cleansedEvents = filteredEvents.map(event => ({
+                    titleE: event.titlee || "Untitled",
+                    titleC: event.titlec || "無標題",
+                    venueE: venue.venuee || "Unknown",
+                    venueC: venue.venuec || "未知",
+                    dateE: event.predateE || null,
+                    dateC: event.predateC || null,
+                    timeE: event.progtimee || "Unknown",
+                    timeC: event.progtimec  || "未知",
+                    descE: event.desce || "",
+                    descC: event.descc || "",
+                    presenterE: event.presenterorge || "TBA",
+                    presenterC: event.presenterorgc || "TBA"
+                }))
+
+                if (debug) {
+                    console.log(cleansedEvents);
+                }
+
                 venueEventsPairs.push({
                     venueID: venue['@_id'],
                     venueNameC: venue.venuec || "Unknown",
@@ -178,7 +205,7 @@ async function FetchXML(req, res, next) {
                     latitude: venue.latitude || null,
                     longitude: venue.longitude || null,
 
-                    events: filteredEvents
+                    events: cleansedEvents
                 })
             }
         }
@@ -202,7 +229,7 @@ app.get('/', (req, res) => {
         maxAge: '1000' + "0000000",
         expires: new Date(Date.now() + '3600000')
     });
-    
+
     // Send index.html as response to render web page
     res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });
@@ -254,7 +281,7 @@ app.post('/api/signup', async (req, res) => {
                 userId: newUser._id,
                 username: newUser.username,
                 role: newUser.role,
-                permission: newUser.role === "admin"? 7: 1
+                permission: newUser.role === "admin" ? 7 : 1
             }
         });
 
@@ -320,20 +347,20 @@ app.post('/api/logout', (req, res) => {
     // Destroy session
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Logout failed' 
+            return res.status(500).json({
+                success: false,
+                message: 'Logout failed'
             });
         }
-        
+
         // Clear session cookie
         res.clearCookie('connect.sid', {
             path: '/'
         });
-        
-        res.json({ 
-            success: true, 
-            message: 'Logged out' 
+
+        res.json({
+            success: true,
+            message: 'Logged out'
         });
     });
 });
@@ -353,7 +380,7 @@ app.get('/api/fetchEvents', (req, res) => {
 
 app.post('/api/updateLocation', async (req, res) => {
     console.log("Trying to write 10 random venues to db...")
-    
+
     try {
         for (const loc of req.body.selectedVenues) {
             console.log(loc);
@@ -365,9 +392,9 @@ app.post('/api/updateLocation', async (req, res) => {
             });
             await newLocation.save();
         }
-        
+
         res.status(201).send("Successfully updated venues");
-        
+
     } catch (error) {
         console.error("Error:", error);
         res.status(500).send("Failed to update venues");

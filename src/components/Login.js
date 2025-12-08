@@ -78,7 +78,8 @@ function Login(props) {
 
     return (
         <div className="login-container m-auto mt-5 w-75">
-            <h2 className="mx-auto text-center">Login / Sign Up</h2>
+            <h1 className="mx-auto my-3 text-center text-success">Welcome to my page!</h1>
+            <h2 className="mx-auto mb-3 text-center">Login / Sign Up</h2>
             
             {error && (
                 <div className="alert alert-danger" role="alert">
@@ -114,7 +115,7 @@ function Login(props) {
                     />
                 </div>
 
-                <div className="form-check mt-3">
+                <div className="form-check mt-3 d-flex justify-content-start">
                     <input
                         type="checkbox"
                         id="rememberMe"
@@ -122,7 +123,7 @@ function Login(props) {
                         className="form-check-input"
                         disabled={isLoading}
                     />
-                    <label htmlFor="rememberMe" className="form-check-label">
+                    <label htmlFor="rememberMe" className="form-check-label mx-1">
                         Remember me
                     </label>
                 </div>
