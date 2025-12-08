@@ -9,7 +9,7 @@ const PORT = 5000;
 const app = express();
 
 
-mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // idk how to do mongodb, need help
+mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db'); // idk how to do mongodb connection, need help
 const db = mongoose.connection;
 
 // Upon connection failure
@@ -29,42 +29,30 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Mongoose Models
-// Model 1: Event
+// Model 1: Event (I think it is not specifically required in the spec?)
 const EventSchema = mongoose.Schema({
-    eventID: {
-        type: Number,
-        required: [true, "Name is required"],
-    },
-    location: {
-        type: String,
-        required: true,
-    },
-    quota: {
-        type: Number,
-        validate: {
-            validator: function (value) {
-                return value > 0;
-            },
-            message: () => "Please enter a valid quota",
-        },
-    },
+    titleE: { type: String, required: true },
+    titleC: { type: String, required: true },
+    venueE: { type: String, required: true },
+    venueC: { type: String, required: true },
+    dateE: { type: String, required: true },
+    dateC: { type: String, required: true },
+    timeE: { type: String, required: true },
+    timeC: { type: String, required: true },
+    descE: { type: String },
+    descC: { type: String },
+    presenterE: { type: String, required: true },
+    presenterC: { type: String, required: true }
 });
 const Event = mongoose.model("Event", EventSchema);
 
 // Model 2: Location
 const LocationSchema = mongoose.Schema({
-    namee: {
-        type: String,
-    },
-    namec: {
-        type: String
-    },
-    latitude: {
-        type: Number,
-    },
-    longitude: {
-        type: Number,
-    }
+    namee: { type: String },
+    namec: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }]
 })
 const Location = mongoose.model("Location", LocationSchema);
 
@@ -87,13 +75,22 @@ const User = mongoose.model("User", UserSchema);
 
 
 // Upon Successful Opening of the database
-db.once('open', function () {
+db.once('open', async function () {
     console.log("Connection is open...");
 
     // listen to port
     const server = app.listen(PORT);
 
 })
+
+// Before closing the DB
+process.once('SIGINT', async () => {
+    console.log('App exiting, cleaning up...');
+    await Event.deleteMany({});
+    await Location.deleteMany({});
+    console.log('All connections closed');
+    process.exit(0);
+});
 
 // Static file
 app.use(express.static(path.resolve(__dirname, '../public')));
@@ -125,6 +122,11 @@ app.use(checkSession);
 
 // FetchXML - Fetch data from gov dataset XML link
 async function FetchXML(req, res, next) {
+    // console.log("Clearing existing data...");
+    // await Event.deleteMany({});
+    // await Location.deleteMany({});
+    // console.log("Existing data cleared");
+
     const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
     const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
 
@@ -138,7 +140,7 @@ async function FetchXML(req, res, next) {
 
         const eventResponse = await fetch(eventUrl);
         if (!eventResponse.ok) {
-            throw new Error(`HTTP error! status: ${eventResponse.status}`);
+            throw new Error(`HTTP error, status: ${eventResponse.status}`);
         }
         console.log("Successfully fetched event data");
 
@@ -170,7 +172,8 @@ async function FetchXML(req, res, next) {
         for (let venue of req.venueData) {
             // In each loop, match the corresponding events to the venue
             let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
-            
+            let cleansedEvents = [];
+
             // Debug print
             if (debug && 0) {
                 console.log(venue?.['@_id'], filteredEvents);
@@ -179,24 +182,58 @@ async function FetchXML(req, res, next) {
             // Only venues with at least 3 events are considered
             if (filteredEvents.length >= 3) {
 
-                const cleansedEvents = filteredEvents.map(event => ({
+                const savedEventIds = [];
+
+                cleansedEvents = filteredEvents.map(event => ({
                     titleE: event.titlee || "Untitled",
                     titleC: event.titlec || "無標題",
-                    venueE: venue.venuee || "Unknown",
-                    venueC: venue.venuec || "未知",
-                    dateE: event.predateE || null,
-                    dateC: event.predateC || null,
-                    timeE: event.progtimee || "Unknown",
-                    timeC: event.progtimec  || "未知",
+                    venueE: venue.venuee || "TBA",
+                    venueC: venue.venuec || "TBA",
+                    dateE: event.predateE || "TBA",
+                    dateC: event.predateC || "TBA",
+                    timeE: event.progtimee || "TBA",
+                    timeC: event.progtimec || "TBA",
                     descE: event.desce || "",
                     descC: event.descc || "",
                     presenterE: event.presenterorge || "TBA",
                     presenterC: event.presenterorgc || "TBA"
                 }))
 
-                if (debug) {
-                    console.log(cleansedEvents);
+                for (let event of cleansedEvents) {
+                    try {
+                        const newEvent = new Event({
+                            titleE: event.titleE,
+                            titleC: event.titleC,
+                            venueE: event.venueE,
+                            venueC: event.venueC,
+                            dateE: event.dateE,
+                            dateC: event.dateC,
+                            timeE: event.timeE,
+                            timeC: event.timeC,
+                            descE: event.descE,
+                            descC: event.descC,
+                            presenterE: event.presenterE,
+                            presenterC: event.presenterC
+                        })
+
+                        const savedEvent = newEvent.save()
+                        savedEventIds.push(savedEvent._id);
+                    } catch (err) {
+                        console.log("Failed to save event", err);
+                    }
                 }
+            }
+
+            try {
+                const newLocation = new Location({
+                    namee: venue.venuee,
+                    namec: venue.venuec,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    events: cleansedEvents.map(event => event._id)
+                })
+
+                const savedLocation = await newLocation.save();
 
                 venueEventsPairs.push({
                     venueID: venue['@_id'],
@@ -204,9 +241,11 @@ async function FetchXML(req, res, next) {
                     venueNameE: venue.venuee || "Unknown",
                     latitude: venue.latitude || null,
                     longitude: venue.longitude || null,
-
-                    events: cleansedEvents
+                    events: cleansedEvents,
+                    eventsCount: cleansedEvents.length
                 })
+            } catch (err) {
+                console.log("Failed tp save location", err);
             }
         }
         req.venueEventsPairs = venueEventsPairs;
@@ -400,38 +439,3 @@ app.post('/api/updateLocation', async (req, res) => {
         res.status(500).send("Failed to update venues");
     }
 });
-
-
-
-
-
-// As Example || For Testing Purpose
-// CRUD of Event
-Event.find({})
-    .then((data) => {
-        console.log(data);
-    })
-    .catch((err) => {
-        console.log("failed to read");
-    });
-
-// Search for quota >= 500
-Event.find({ quota: { $gte: 500 } })
-    .then((data) => console.log("the event with quota more than 500:", data))
-    .catch((error) => console.log(error));
-
-// update the location if quota >= 500
-Event.findOneAndUpdate(
-    { quota: { $gte: 500 } },
-    { location: "Large Conference Room" },
-    { new: true },
-)
-    .then((data) => { console.log('the updated data is:', data) })
-    .catch((error) => console.log(error));
-
-// delete the event if quota >= 500
-Event.findOneAndDelete(
-    { quota: { $gte: 500 } }
-)
-    .then((data) => { console.log('the deleted data is:', data) })
-    .catch((error) => console.log(error));
