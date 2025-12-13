@@ -429,3 +429,60 @@ app.get('/api/fetchEvents', (req, res) => {
 //     }
 // });
 
+// 添加 Favorite 相关路由
+app.get('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId)
+            .populate('favorites');
+        
+        res.json(user.favorites);
+    } catch (error) {
+        console.error('Error fetching favorites:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch favorites' 
+        });
+    }
+});
+
+app.post('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const { venueId } = req.body;
+        
+        // 查找场地
+        const venue = await Location.findOne({ venueId });
+        if (!venue) {
+            return res.status(404).json({ 
+                error: 'Venue not found' 
+            });
+        }
+        
+        const user = await User.findById(req.session.userId);
+        
+        // 检查是否已收藏
+        const favoriteIndex = user.favorites.indexOf(venue._id);
+        if (favoriteIndex > -1) {
+            // 取消收藏
+            user.favorites.splice(favoriteIndex, 1);
+            await user.save();
+            return res.json({ 
+                success: true, 
+                message: 'Removed from favorites',
+                isFavorite: false 
+            });
+        } else {
+            // 添加收藏
+            user.favorites.push(venue._id);
+            await user.save();
+            return res.json({ 
+                success: true, 
+                message: 'Added to favorites',
+                isFavorite: true 
+            });
+        }
+    } catch (error) {
+        console.error('Error updating favorites:', error);
+        res.status(500).json({ 
+            error: 'Failed to update favorites' 
+        });
+    }
+});

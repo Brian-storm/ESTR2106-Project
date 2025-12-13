@@ -16,7 +16,6 @@ function Login(props) {
             const data = Object.fromEntries(formData);
             console.log('Form data:', data);
             
-            // Determine which button was clicked
             const submitter = event.nativeEvent.submitter;
             const action = submitter.value
             
@@ -36,11 +35,11 @@ function Login(props) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Important for cookies
+                credentials: 'include',
                 body: JSON.stringify({
                     username: data.username,
                     password: data.password,
-                    rememberMe: data.rememberMe === 'on' // Convert checkbox value
+                    rememberMe: data.rememberMe === 'on'
                 })
             });
 
@@ -50,6 +49,8 @@ function Login(props) {
                 const result = await response.json();
                 console.log('Login success:', result);
 
+                // ✅ 关键：登录成功后获取并保存数据
+                await fetchAndSaveVenuesData();
                 
                 // Redirect or update parent component
                 if (props.setUser) {
@@ -61,7 +62,6 @@ function Login(props) {
                 navigate('/');
                 
             } else {
-                // Handle non-OK responses (400, 401, 500, etc.)
                 const errorData = await response.json().catch(() => ({}));
                 setError(errorData.message || `Login failed: ${response.status}`);
                 window.alert(errorData.message || 'Login failed');
@@ -73,6 +73,40 @@ function Login(props) {
             window.alert('Network error occurred');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // ✅ 新增：获取并保存场地数据的函数
+    const fetchAndSaveVenuesData = async () => {
+        try {
+            console.log("Fetching venues data after login...");
+            const response = await fetch("/api/fetchEvents");
+            const data = await response.json();
+            console.log("Received venues data:", data.length, "items");
+            
+            // 过滤条件：至少3个活动且有坐标
+            const filtered = data.filter(v => v.eventsCount >= 3 && v.latitude && v.longitude);
+            console.log("Filtered to:", filtered.length, "venues with events >= 3");
+            
+            if (filtered.length > 0) {
+                // 随机选择10个
+                const shuffled = [...filtered];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                const selected = shuffled.slice(0, 10);
+                
+                // 保存到 localStorage
+                localStorage.setItem('selectedVenues', JSON.stringify(selected));
+                console.log("Saved venues to localStorage");
+            } else {
+                console.warn("No suitable venues found");
+                localStorage.removeItem('selectedVenues');
+            }
+        } catch (error) {
+            console.error('Error fetching venues data:', error);
+            localStorage.removeItem('selectedVenues');
         }
     };
 
