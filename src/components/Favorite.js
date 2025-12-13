@@ -295,7 +295,7 @@ function Favorite() {
                                                 '⇅'}</span>
                                         </button>
                                     </th>
-                                    <th scope="col" className="text-center">Actions</th>
+                                    <th scope="col" className="text-center">Remove</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -327,8 +327,7 @@ function Favorite() {
                                                         className="btn btn-outline-danger btn-sm"
                                                         onClick={() => removeFavorite(venueId)}
                                                     >
-                                                        <i className="bi bi-trash me-1"></i>
-                                                        Remove
+                                                        <i className="bi bi-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
