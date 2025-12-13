@@ -226,6 +226,10 @@ function Home() {
         setSearchQuery('');
     };
 
+    const handleClearDistrict = () => {
+        setSelectedDistrict('');
+    };
+
     const handleClearDistance = () => {
         setMaxDistance(100); // 重置为最大距离
     };
@@ -456,18 +460,13 @@ function Home() {
                     <div className="text-center py-4 text-muted">
                         <i className="bi bi-search display-6"></i>
                         <h5 className="mt-3">No venues found</h5>
-                        <p>
-                            {searchQuery && maxDistance < 100 && `No venues match "${searchQuery}" within ${maxDistance}km`}
-                            {searchQuery && maxDistance === 100 && `No venues match "${searchQuery}"`}
-                            {!searchQuery && maxDistance < 100 && `No venues within ${maxDistance}km`}
-                            {!searchQuery && maxDistance === 100 && 'No venues available'}
-                        </p>
                         <div className="mt-3">
-                            {(searchQuery || maxDistance < 100) && (
+                            {(searchQuery || selectedDistrict || maxDistance < 100) && (
                                 <button 
                                     className="btn btn-outline-primary"
                                     onClick={() => {
                                         handleClearSearch();
+                                        handleClearDistrict();
                                         handleClearDistance();
                                     }}
                                 >
