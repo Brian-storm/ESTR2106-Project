@@ -110,7 +110,7 @@ async function FetchXML(req, res, next) {
         console.log("Starting data update (not replacement)...");
 
         let venueEventsPairs = [];
-        
+
         const groupByDistrict = {
             "Central and Western": [],
             "Wan Chai": [],
@@ -133,120 +133,130 @@ async function FetchXML(req, res, next) {
             "Sai Kung": [],
             "Islands": []
         };
-        
+        const notGrouped = []
+
         for (let venue of req.venueData) {
 
-        // pairing venues with the 18 districts
-        for (let districtName in districts) {
-            for (let subDistrict of districts[districtName]) {
-                if (venue.venuee.includes(subDistrict)) {
-                    groupByDistrict[districtName].push(venue.venuee);
+            let isGrouped = 0;
+            // pairing venues with the 18 districts
+            for (let districtName in districts) {
+                for (let subDistrict of districts[districtName]) {
+                    if (venue.venuee.includes(subDistrict)) {
+                        groupByDistrict[districtName].push(venue.venuee);
+                        isGrouped = 1;
+                    }
                 }
             }
-        }
+            if (!isGrouped) {
+                notGrouped.push(venue.venuee);
+            }
 
-        let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
+            let filteredEvents = req.eventData.filter((item) =>
+                (venue['@_id'] === String(item.venueid)) && !venue.venuee.includes("Venues in"));
 
-        const cleansedEvents = [];
+            const cleansedEvents = [];
 
-        for (let event of filteredEvents) {
+            for (let event of filteredEvents) {
+                try {
+                    const eventData = {
+                        title: event.titlee || "Untitled",
+                        venue: venue.venuee || "TBA",
+                        date: event.predateE || "TBA",
+                        time: event.progtimee || "TBA",
+                        desc: event.desce || "",
+                        presenter: event.presenterorge || "TBA",
+                        eventId: event['@_id']
+                    };
+
+                    // Check if event exists using eventId
+                    const existingEvent = await Event.findOne({
+                        eventId: event['@_id']
+                    });
+
+                    let savedEvent;
+                    if (existingEvent) {
+                        savedEvent = await Event.findByIdAndUpdate(
+                            existingEvent._id,
+                            { $set: eventData },
+                            { new: true }
+                        );
+                    } else {
+                        savedEvent = new Event(eventData);
+                        await savedEvent.save();
+                    }
+
+                    cleansedEvents.push({
+                        _id: savedEvent._id,
+                        title: savedEvent.title,
+                        venue: savedEvent.venue,
+                        date: savedEvent.date,
+                        time: savedEvent.time,
+                        desc: savedEvent.desc,
+                        presenter: savedEvent.presenter,
+                        eventId: savedEvent.eventId
+                    });
+                } catch (err) {
+                    console.log("Failed to save/update event", err);
+                }
+            }
+
             try {
-                const eventData = {
-                    title: event.titlee || "Untitled",
-                    venue: venue.venuee || "TBA",
-                    date: event.predateE || "TBA",
-                    time: event.progtimee || "TBA",
-                    desc: event.desce || "",
-                    presenter: event.presenterorge || "TBA",
-                    eventId: event['@_id']
+                const locationData = {
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    events: cleansedEvents.map(event => event._id),
+                    venueId: venue['@_id']  // Store the original venue ID
                 };
 
-                // Check if event exists using eventId
-                const existingEvent = await Event.findOne({
-                    eventId: event['@_id']
+                // Check if location exists using venueId
+                const existingLocation = await Location.findOne({
+                    venueId: venue['@_id']
                 });
 
-                let savedEvent;
-                if (existingEvent) {
-                    savedEvent = await Event.findByIdAndUpdate(
-                        existingEvent._id,
-                        { $set: eventData },
+                let savedLocation;
+                if (existingLocation) {
+                    savedLocation = await Location.findByIdAndUpdate(
+                        existingLocation._id,
+                        { $set: locationData },
                         { new: true }
                     );
+                    // console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
                 } else {
-                    savedEvent = new Event(eventData);
-                    await savedEvent.save();
+                    savedLocation = new Location(locationData);
+                    await savedLocation.save();
+                    // console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
                 }
 
-                cleansedEvents.push({
-                    _id: savedEvent._id,
-                    title: savedEvent.title,
-                    venue: savedEvent.venue,
-                    date: savedEvent.date,
-                    time: savedEvent.time,
-                    desc: savedEvent.desc,
-                    presenter: savedEvent.presenter,
-                    eventId: savedEvent.eventId
+                venueEventsPairs.push({
+                    venueId: locationData.venueId,
+                    name: locationData.name,
+                    latitude: locationData.latitude,
+                    longitude: locationData.longitude,
+                    events: cleansedEvents,
+                    eventsCount: cleansedEvents.length
                 });
             } catch (err) {
-                console.log("Failed to save/update event", err);
+                console.log("Failed to save/update location", err);
             }
         }
 
-        try {
-            const locationData = {
-                name: venue.venuee,
-                latitude: venue.latitude,
-                longitude: venue.longitude,
-                events: cleansedEvents.map(event => event._id),
-                venueId: venue['@_id']  // Store the original venue ID
-            };
+        req.venueEventsPairs = venueEventsPairs;
+        req.groupByDistrict = groupByDistrict;
+        req.notGrouped = notGrouped;
+        console.log(groupByDistrict);
+        console.log();
+        console.log(notGrouped);
 
-            // Check if location exists using venueId
-            const existingLocation = await Location.findOne({
-                venueId: venue['@_id']
-            });
+        next();
 
-            let savedLocation;
-            if (existingLocation) {
-                savedLocation = await Location.findByIdAndUpdate(
-                    existingLocation._id,
-                    { $set: locationData },
-                    { new: true }
-                );
-                // console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
-            } else {
-                savedLocation = new Location(locationData);
-                await savedLocation.save();
-                // console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
-            }
-
-            venueEventsPairs.push({
-                venueId: locationData.venueId,
-                name: locationData.name,
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                events: cleansedEvents,
-                eventsCount: cleansedEvents.length
-            });
-        } catch (err) {
-            console.log("Failed to save/update location", err);
-        }
+    } catch (error) {
+        console.error('Error in FetchXML:', error);
+        res.status(500).json({
+            error: 'Failed to fetch and process events data',
+            details: error.message
+        });
     }
-
-    req.venueEventsPairs = venueEventsPairs;
-    req.groupByDistrict = groupByDistrict;
-    console.log(groupByDistrict);
-
-    next();
-
-} catch (error) {
-    console.error('Error in FetchXML:', error);
-    res.status(500).json({
-        error: 'Failed to fetch and process events data',
-        details: error.message
-    });
-}
 }
 app.use('/api/fetchEvents', FetchXML);
 
@@ -344,11 +354,14 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        req.session.userId = user._id;
-        req.session.username = user.username;
-        req.session.role = user.role;
+        if (req.body.rememberMe) {
+            req.session.userId = user._id;
+            req.session.username = user.username;
+            req.session.role = user.role;
 
-        console.log('Session created successfully for user:', username);
+            console.log('Session created successfully for user:', username);
+        }
+
 
         res.status(200).json({
             success: true,
