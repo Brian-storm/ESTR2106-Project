@@ -486,3 +486,34 @@ app.post('/api/favorites', checkSession, async (req, res) => {
         });
     }
 });
+
+app.delete('/api/clearFavorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId);
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'User not found' 
+            });
+        }
+        
+        // 清空收藏数组
+        user.favorites = [];
+        await user.save();
+        
+        console.log(`Cleared favorites for user: ${user.username}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'All favorites cleared successfully',
+            favorites: []
+        });
+    } catch (error) {
+        console.error('Error clearing favorites:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to clear favorites' 
+        });
+    }
+});
