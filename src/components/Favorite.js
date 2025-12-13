@@ -273,7 +273,6 @@ function Favorite() {
                         <table className="table table-striped table-hover">
                             <thead className="table-dark">
                                 <tr>
-                                    <th scope="col" className="text-center">#</th>
                                     <th scope="col" className="text-center">
                                         <button 
                                             className="btn btn-sm favorite-sort-btn"
@@ -309,9 +308,6 @@ function Favorite() {
                                     return (
                                         <tr key={venueId}>
                                             <td className="text-center">
-                                                <div className="fw-bold">{globalIndex + 1}</div>
-                                            </td>
-                                            <td className="text-left-cell">
                                                 <div className="fw-bold">
                                                     <Link 
                                                         to={`/view/${venueId}`}

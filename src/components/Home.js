@@ -11,6 +11,17 @@ function Home() {
     const [maxDistance, setMaxDistance] = useState(50);
     const [selectedDistrict, setSelectedDistrict] = useState('');
 
+    // Favorite.js - 在组件中添加
+    const [dataFetchTime, setDataFetchTime] = useState(null);
+
+    useEffect(() => {
+        // 从 localStorage 获取数据获取时间
+        const savedTime = localStorage.getItem('dataFetchTime');
+        if (savedTime) {
+            setDataFetchTime(new Date(savedTime));
+        }
+    }, []);
+
     // 缺少的数据加载 useEffect
     useEffect(() => {
         const saved = localStorage.getItem('selectedVenues');
@@ -338,50 +349,50 @@ function Home() {
             <div className="table-responsive">
                 <table className="table table-striped table-hover">
                     <thead className="table-header-clean">
-    <tr>
-        <th scope="col" className="text-center-cell">Venue ID</th>
-        <th scope="col" className="text-center-cell">
-            <button 
-                className="btn btn-sm sort-btn-header sort-btn-location"
-                onClick={() => handleSort('name')}
-            >
-                <span>Location</span>
-                <span className="sort-arrow">
-                    {sortConfig.key === 'name' ? 
-                        (sortConfig.direction === 'asc' ? '↑' : '↓') : 
-                        '⇅'}
-                </span>
-            </button>
-        </th>
-        <th scope="col" className="text-center-cell">
-            <button 
-                className="btn btn-sm sort-btn-header sort-btn-distance"
-                onClick={() => handleSort('distance')}
-            >
-                <span>Distance</span>
-                <span className="sort-arrow">
-                    {sortConfig.key === 'distance' ? 
-                        (sortConfig.direction === 'asc' ? '↑' : '↓') : 
-                        '⇅'}
-                </span>
-            </button>
-        </th>
-        <th scope="col" className="text-center-cell">
-            <button 
-                className="btn btn-sm sort-btn-header sort-btn-events"
-                onClick={() => handleSort('events')}
-            >
-                <span>Number of Events</span>
-                <span className="sort-arrow">
-                    {sortConfig.key === 'events' ? 
-                        (sortConfig.direction === 'asc' ? '↑' : '↓') : 
-                        '⇅'}
-                </span>
-            </button>
-        </th>
-        <th scope="col" className="text-center-cell">Favorite</th>
-    </tr>
-</thead>
+                        <tr>
+                            <th scope="col" className="text-center-cell">Venue ID</th>
+                            <th scope="col" className="text-center-cell">
+                                <button 
+                                    className="btn btn-sm sort-btn-header sort-btn-location"
+                                    onClick={() => handleSort('name')}
+                                >
+                                    <span>Location</span>
+                                    <span className="sort-arrow">
+                                        {sortConfig.key === 'name' ? 
+                                            (sortConfig.direction === 'asc' ? '↑' : '↓') : 
+                                            '⇅'}
+                                    </span>
+                                </button>
+                            </th>
+                            <th scope="col" className="text-center-cell">
+                                <button 
+                                    className="btn btn-sm sort-btn-header sort-btn-distance"
+                                    onClick={() => handleSort('distance')}
+                                >
+                                    <span>Distance</span>
+                                    <span className="sort-arrow">
+                                        {sortConfig.key === 'distance' ? 
+                                            (sortConfig.direction === 'asc' ? '↑' : '↓') : 
+                                            '⇅'}
+                                    </span>
+                                </button>
+                            </th>
+                            <th scope="col" className="text-center-cell">
+                                <button 
+                                    className="btn btn-sm sort-btn-header sort-btn-events"
+                                    onClick={() => handleSort('events')}
+                                >
+                                    <span>Number of Events</span>
+                                    <span className="sort-arrow">
+                                        {sortConfig.key === 'events' ? 
+                                            (sortConfig.direction === 'asc' ? '↑' : '↓') : 
+                                            '⇅'}
+                                    </span>
+                                </button>
+                            </th>
+                            <th scope="col" className="text-center-cell">Favorite</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {sortedFilteredVenues.map((venue, index) => {
                             const distance = calculateDistance(venue);
@@ -467,6 +478,25 @@ function Home() {
                         </div>
                     </div>
                 )}
+            </div>
+            <div className="update-info mt-4">
+                <div className="d-flex justify-content-center align-items-center">
+                    <div className="text-center">
+                        <div className="text-muted small">
+                            Last updated time : {dataFetchTime ? 
+                                dataFetchTime.toLocaleString([], { 
+                                    weekday: 'short',
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }) : 
+                                'Loading...'
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

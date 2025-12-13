@@ -51,6 +51,10 @@ function Login(props) {
 
                 // ✅ 关键：登录成功后获取并保存数据
                 await fetchAndSaveVenuesData();
+
+                // 存储数据获取时间
+                const fetchTime = new Date();
+                localStorage.setItem('dataFetchTime', fetchTime.toISOString());
                 
                 // Redirect or update parent component
                 if (props.setUser) {

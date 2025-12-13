@@ -146,3 +146,18 @@
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4092 100%);
 }
 */
+
+/* 更新时间信息样式 */
+.update-info {
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+.update-info i {
+    font-size: 1.2rem;
+    color: #6c63ff;
+    margin-right: 0.5rem;
+}
