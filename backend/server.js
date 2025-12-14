@@ -43,7 +43,8 @@ const LocationSchema = mongoose.Schema({
     latitude: { type: Number },
     longitude: { type: Number },
     events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
-    venueId: { type: String, unique: true }
+    venueId: { type: String, unique: true },
+    district: { type: String }
 })
 const Location = mongoose.model("Location", LocationSchema);
 
@@ -111,6 +112,49 @@ const checkSession = (req, res, next) => {
 };
 app.use(checkSession);
 
+const districtCache = new Map();
+let lastCall = 0;
+
+const fetchDistrict = async (lat, lon) => {
+    // Create cache key from coordinates (rounded to 4 decimals)
+    const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+    
+    // Return cached result if available
+    if (districtCache.has(cacheKey)) {
+        console.log(`Using cached district for ${cacheKey}`);
+        return districtCache.get(cacheKey);
+    }
+    
+    // Rate limiting
+    const wait = 1100 - (Date.now() - lastCall);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    lastCall = Date.now();
+    
+    try {
+        const res = await fetch(
+            // Add the language parameter explicitly
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=en`,
+            { 
+                signal: AbortSignal.timeout(3000),
+                headers: { 'User-Agent': 'ESTR2106-App/1.0' }
+            }
+        );
+        
+        if (!res.ok) return null;
+        
+        const data = await res.json();
+        const district = data.address?.city_district || data.address?.city || null;
+        
+        // Cache the result
+        if (district) districtCache.set(cacheKey, district);
+        
+        return district;
+        
+    } catch {
+        return null;
+    }
+};
+
 // FetchXML - Fetch data from gov dataset XML link
 async function FetchXML(req, res, next) {
     const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
@@ -150,8 +194,11 @@ async function FetchXML(req, res, next) {
         let venueEventsPairs = [];
         
         for (let venue of req.venueData) {
+            if (!venue.latitude || !venue.longitude) continue;
             let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
             
+            if (filteredEvents.length < 3) continue;
+
             const cleansedEvents = [];
 
             for (let event of filteredEvents) {
@@ -199,20 +246,25 @@ async function FetchXML(req, res, next) {
             }
 
             try {
-                const locationData = {
-                    name: venue.venuee,
-                    latitude: venue.latitude,
-                    longitude: venue.longitude,
-                    events: cleansedEvents.map(event => event._id),
-                    venueId: venue['@_id']  // Store the original venue ID
-                };
-
                 // Check if location exists using venueId
                 const existingLocation = await Location.findOne({
                     venueId: venue['@_id']
                 });
 
                 let savedLocation;
+                const districtName = (existingLocation && existingLocation.district) 
+                ? existingLocation.district
+                : await fetchDistrict(venue.latitude, venue.longitude);
+
+                const locationData = {
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    events: cleansedEvents.map(event => event._id),
+                    venueId: venue['@_id'],  // Store the original venue ID
+                    district: districtName
+                };
+
                 if (existingLocation) {
                     savedLocation = await Location.findByIdAndUpdate(
                         existingLocation._id,
@@ -232,7 +284,8 @@ async function FetchXML(req, res, next) {
                     latitude: locationData.latitude,
                     longitude: locationData.longitude,
                     events: cleansedEvents,
-                    eventsCount: cleansedEvents.length
+                    eventsCount: cleansedEvents.length,
+                    district: districtName
                 });
             } catch (err) {
                 console.log("Failed to save/update location", err);

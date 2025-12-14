@@ -107,7 +107,7 @@ function Home() {
         // 2. 区域筛选
         if (selectedDistrict) {
             filtered = filtered.filter(venue => 
-                venue.district === selectedDistrict
+                venue.district === selectedDistrict + ' District'
             );
         }
         
@@ -231,7 +231,7 @@ function Home() {
     };
 
     const handleClearDistance = () => {
-        setMaxDistance(100); // 重置为最大距离
+        setMaxDistance(50);
     };
 
     return (
@@ -283,7 +283,7 @@ function Home() {
                                     onChange={(e) => setSelectedDistrict(e.target.value)}
                                 >
                                     <option value="">All Districts</option>
-                                    <option value="Central & Western">Central & Western</option>
+                                    <option value="Central and Western">Central & Western</option>
                                     <option value="Wan Chai">Wan Chai</option>
                                     <option value="Eastern">Eastern</option>
                                     <option value="Southern">Southern</option>

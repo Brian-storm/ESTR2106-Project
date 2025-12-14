@@ -201,39 +201,37 @@ function Favorite() {
             {/* 分页和批量操作 - 在同一行 */}
         <div className="mt-3 d-flex justify-content-between align-items-center">
             {/* 分页控件 */}
-            {totalPages > 1 && (
-                <div className="d-flex align-items-center">
-                    <nav aria-label="Favorites pagination">
-                        <ul className="pagination mb-0">
-                            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                <button 
-                                    className="page-link" 
-                                    onClick={goToPrevPage}
-                                    disabled={currentPage === 1}
-                                >
-                                    <i className="bi bi-chevron-left"></i>
-                                </button>
-                            </li>
-                            
-                            <li className="text-muted">
-                                <span className="page-link">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                            </li>
-                            
-                            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                                <button 
-                                    className="page-link" 
-                                    onClick={goToNextPage}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    <i className="bi bi-chevron-right"></i>
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            )}
+            <div className="d-flex align-items-center">
+                <nav aria-label="Favorites pagination">
+                    <ul className="pagination mb-0">
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                            <button 
+                                className="page-link" 
+                                onClick={goToPrevPage}
+                                disabled={currentPage === 1}
+                            >
+                                <i className="bi bi-chevron-left"></i>
+                            </button>
+                        </li>
+                        
+                        <li className="text-muted">
+                            <span className="page-link">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                        </li>
+                        
+                        <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                            <button 
+                                className="page-link" 
+                                onClick={goToNextPage}
+                                disabled={currentPage === totalPages}
+                            >
+                                <i className="bi bi-chevron-right"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
             
             {/* 批量操作按钮 - 右对齐 */}
             <div>

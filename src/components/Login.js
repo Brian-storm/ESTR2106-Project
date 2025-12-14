@@ -86,15 +86,11 @@ function Login(props) {
             console.log("Fetching venues data after login...");
             const response = await fetch("/api/fetchEvents");
             const data = await response.json();
-            console.log("Received venues data:", data.length, "items");
+            // console.log("Received venues data:", data.length, "items");
             
-            // 过滤条件：至少3个活动且有坐标
-            const filtered = data.filter(v => v.eventsCount >= 3 && v.latitude && v.longitude);
-            console.log("Filtered to:", filtered.length, "venues with events >= 3");
-            
-            if (filtered.length > 0) {
+            if (data.length > 0) {
                 // 随机选择10个
-                const shuffled = [...filtered];
+                const shuffled = [...data];
                 for (let i = shuffled.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
