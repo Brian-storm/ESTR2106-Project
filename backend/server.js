@@ -428,3 +428,12 @@ app.get('/api/fetchEvents', (req, res) => {
 //     }
 // });
 
+app.get("/api/venues", async (req, res) => {
+  try {
+    const locations = await Location.find({});
+    res.json(locations);
+  } catch (error) {
+    console.error("Error fetching locations:", error);
+    res.status(500).json({ error: "Failed to fetch locations" });
+  }
+});
