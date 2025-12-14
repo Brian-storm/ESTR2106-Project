@@ -213,22 +213,11 @@ async function FetchXML(req, res, next) {
                         eventId: event['@_id']
                     };
 
-                    // Check if event exists using eventId
-                    const existingEvent = await Event.findOne({
-                        eventId: event['@_id']
-                    });
-
-                    let savedEvent;
-                    if (existingEvent) {
-                        savedEvent = await Event.findByIdAndUpdate(
-                            existingEvent._id,
-                            { $set: eventData },
-                            { new: true }
-                        );
-                    } else {
-                        savedEvent = new Event(eventData);
-                        await savedEvent.save();
-                    }
+                    const savedEvent = await Event.updateOne(
+                        { eventId: eventData.eventId },
+                        { $set: eventData },
+                        { upsert: true }
+                    );
                     
                     cleansedEvents.push({
                         _id: savedEvent._id,
