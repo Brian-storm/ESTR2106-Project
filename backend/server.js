@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
+const { Event, Location, User } = require('./modules/models');
 
 const PORT = 5000;
 const app = express();
@@ -23,50 +24,6 @@ if (development) {
 
 app.use(express.json());
 app.use(cookieParser());
-
-// Mongoose Models
-// Model 1: Event
-const EventSchema = mongoose.Schema({
-    title: { type: String, required: true },
-    venue: { type: String, required: true },
-    date: { type: String, required: true },
-    time: { type: String, required: true },
-    desc: { type: String },
-    presenter: { type: String, required: true },
-    eventId: { type: String, unique: true }
-});
-const Event = mongoose.model("Event", EventSchema);
-
-// Model 2: Location
-const LocationSchema = mongoose.Schema({
-    name: { type: String },
-    latitude: { type: Number },
-    longitude: { type: Number },
-    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
-    venueId: { type: String, unique: true },
-    district: { type: String }
-})
-const Location = mongoose.model("Location", LocationSchema);
-
-// Model 3: User
-const UserSchema = mongoose.Schema({
-    username: {
-        type: String,
-        required: [true, "Username is required"]
-    },
-    password: {
-        type: String,
-        required: [true, "Password is required"]
-    },
-    role: {
-        type: String
-    },
-    favorites: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Location'
-    }]
-});
-const User = mongoose.model("User", UserSchema);
 
 // Upon Successful Opening of the database
 db.once('open', async function () {
@@ -93,7 +50,7 @@ app.use(session({
     rolling: true,
     saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 5, // 5 minutes
+        maxAge: 1000 * 60 * 15, // Session lasts for 15 minutes
         httpOnly: true,
         secure: false, // Set to true in production with HTTPS
     }
@@ -259,7 +216,7 @@ async function FetchXML(req, res, next) {
 
                 let savedLocation;
                 let districtName;
-                // direct find first shld be faster(?)
+                // direct find first
                 if (districtName = MatchDistrict(venue.venuee)) {
                     // districtName is found, skip
                     // if name does not include subdistrict, lookup DB or fetch it
@@ -471,29 +428,6 @@ app.get('/api/fetchEvents', (req, res) => {
     res.json(req.venueEventsPairs);
 })
 
-
-// app.post('/api/updateLocation', async (req, res) => {
-//     console.log("Trying to write 10 random venues to db...")
-
-//     try {
-//         for (const loc of req.body.selectedVenues) {
-//             console.log(loc);
-//             const newLocation = new Location({
-//                 namee: loc.venueNameE,
-//                 namec: loc.venueNameC || '',
-//                 latitude: loc.latitude || '',
-//                 longitude: loc.longitude || ''
-//             });
-//             await newLocation.save();
-//         }
-
-//         res.status(201).send("Successfully updated venues");
-
-//     } catch (error) {
-//         console.error("Error:", error);
-//         res.status(500).send("Failed to update venues");
-//     }
-// });
 
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {
