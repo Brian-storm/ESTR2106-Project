@@ -112,44 +112,61 @@ const checkSession = (req, res, next) => {
 };
 app.use(checkSession);
 
+
+// Analyze district by referring to subdistrict name first to reduce fetching
+const districts = [
+    "Central and Western", "Wan Chai", "Eastern", "Southern",
+    "Yau Tsim Mong", "Sham Shui Po", "Kowloon City", "Wong Tai Sin", "Kwun Tong",
+    "Kwai Tsing", "Tsuen Wan", "Tuen Mun", "Yuen Long", "North", "Tai Po", "Sha Tin", "Sai Kung", "Islands"
+];
+
+const MatchDistrict = (name) => {
+    for (let district of districts) {
+        if (name.includes(district)) {
+            return district;
+        }
+    }
+    return null;
+}
+
 const districtCache = new Map();
 let lastCall = 0;
 
 const fetchDistrict = async (lat, lon) => {
     // Create cache key from coordinates (rounded to 4 decimals)
     const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-    
+
     // Return cached result if available
     if (districtCache.has(cacheKey)) {
         console.log(`Using cached district for ${cacheKey}`);
         return districtCache.get(cacheKey);
     }
-    
+
     // Rate limiting
     const wait = 1100 - (Date.now() - lastCall);
     if (wait > 0) await new Promise(r => setTimeout(r, wait));
     lastCall = Date.now();
-    
+
     try {
         const res = await fetch(
             // Add the language parameter explicitly
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=en`,
-            { 
+            {
                 signal: AbortSignal.timeout(3000),
                 headers: { 'User-Agent': 'ESTR2106-App/1.0' }
             }
         );
-        
+
         if (!res.ok) return null;
-        
+
         const data = await res.json();
         const district = data.address?.city_district || data.address?.city || null;
-        
+
         // Cache the result
         if (district) districtCache.set(cacheKey, district);
-        
+
         return district;
-        
+
     } catch {
         return null;
     }
@@ -192,11 +209,11 @@ async function FetchXML(req, res, next) {
         console.log("Starting data update (not replacement)...");
 
         let venueEventsPairs = [];
-        
+
         for (let venue of req.venueData) {
             if (!venue.latitude || !venue.longitude) continue;
             let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
-            
+
             if (filteredEvents.length < 3) continue;
 
             const cleansedEvents = [];
@@ -218,7 +235,7 @@ async function FetchXML(req, res, next) {
                         { $set: eventData },
                         { upsert: true }
                     );
-                    
+
                     cleansedEvents.push({
                         _id: savedEvent._id,
                         title: savedEvent.title,
@@ -241,9 +258,16 @@ async function FetchXML(req, res, next) {
                 });
 
                 let savedLocation;
-                const districtName = (existingLocation && existingLocation.district) 
-                ? existingLocation.district
-                : await fetchDistrict(venue.latitude, venue.longitude);
+                let districtName;
+                // direct find first shld be faster(?)
+                if (districtName = MatchDistrict(venue.venuee)) {
+                    // districtName is found, skip
+                    // if name does not include subdistrict, lookup DB or fetch it
+                } else if (existingLocation && existingLocation.district) {
+                    districtName = existingLocation.district;
+                } else {
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                }
 
                 const locationData = {
                     name: venue.venuee,
@@ -280,16 +304,16 @@ async function FetchXML(req, res, next) {
                 console.log("Failed to save/update location", err);
             }
         }
-        
+
         req.venueEventsPairs = venueEventsPairs;
 
         next();
 
     } catch (error) {
         console.error('Error in FetchXML:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Failed to fetch and process events data',
-            details: error.message 
+            details: error.message
         });
     }
 }
@@ -476,12 +500,12 @@ app.get('/api/favorites', checkSession, async (req, res) => {
     try {
         const user = await User.findById(req.session.userId)
             .populate('favorites');
-        
+
         res.json(user.favorites);
     } catch (error) {
         console.error('Error fetching favorites:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch favorites' 
+        res.status(500).json({
+            error: 'Failed to fetch favorites'
         });
     }
 });
@@ -489,42 +513,42 @@ app.get('/api/favorites', checkSession, async (req, res) => {
 app.post('/api/favorites', checkSession, async (req, res) => {
     try {
         const { venueId } = req.body;
-        
+
         // 查找场地
         const venue = await Location.findOne({ venueId });
         if (!venue) {
-            return res.status(404).json({ 
-                error: 'Venue not found' 
+            return res.status(404).json({
+                error: 'Venue not found'
             });
         }
-        
+
         const user = await User.findById(req.session.userId);
-        
+
         // 检查是否已收藏
         const favoriteIndex = user.favorites.indexOf(venue._id);
         if (favoriteIndex > -1) {
             // 取消收藏
             user.favorites.splice(favoriteIndex, 1);
             await user.save();
-            return res.json({ 
-                success: true, 
+            return res.json({
+                success: true,
                 message: 'Removed from favorites',
-                isFavorite: false 
+                isFavorite: false
             });
         } else {
             // 添加收藏
             user.favorites.push(venue._id);
             await user.save();
-            return res.json({ 
-                success: true, 
+            return res.json({
+                success: true,
                 message: 'Added to favorites',
-                isFavorite: true 
+                isFavorite: true
             });
         }
     } catch (error) {
         console.error('Error updating favorites:', error);
-        res.status(500).json({ 
-            error: 'Failed to update favorites' 
+        res.status(500).json({
+            error: 'Failed to update favorites'
         });
     }
 });
@@ -532,30 +556,30 @@ app.post('/api/favorites', checkSession, async (req, res) => {
 app.delete('/api/clearFavorites', checkSession, async (req, res) => {
     try {
         const user = await User.findById(req.session.userId);
-        
+
         if (!user) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                error: 'User not found' 
+                error: 'User not found'
             });
         }
-        
+
         // 清空收藏数组
         user.favorites = [];
         await user.save();
-        
+
         console.log(`Cleared favorites for user: ${user.username}`);
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: 'All favorites cleared successfully',
             favorites: []
         });
     } catch (error) {
         console.error('Error clearing favorites:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Failed to clear favorites' 
+            error: 'Failed to clear favorites'
         });
     }
 });
