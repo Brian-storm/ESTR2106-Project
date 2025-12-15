@@ -25,50 +25,6 @@ if (development) {
 app.use(express.json());
 app.use(cookieParser());
 
-// Mongoose Models
-// Model 1: Event
-const EventSchema = mongoose.Schema({
-    title: { type: String, required: true },
-    venue: { type: String, required: true },
-    date: { type: String, required: true },
-    time: { type: String, required: true },
-    desc: { type: String },
-    presenter: { type: String, required: true },
-    eventId: { type: String, unique: true }
-});
-const Event = mongoose.model("Event", EventSchema);
-
-// Model 2: Location
-const LocationSchema = mongoose.Schema({
-    name: { type: String },
-    latitude: { type: Number },
-    longitude: { type: Number },
-    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
-    venueId: { type: String, unique: true },
-    district: { type: String }
-})
-const Location = mongoose.model("Location", LocationSchema);
-
-// Model 3: User
-const UserSchema = mongoose.Schema({
-    username: {
-        type: String,
-        required: [true, "Username is required"]
-    },
-    password: {
-        type: String,
-        required: [true, "Password is required"]
-    },
-    role: {
-        type: String
-    },
-    favorites: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Location'
-    }]
-});
-const User = mongoose.model("User", UserSchema);
-
 // Upon Successful Opening of the database
 db.once('open', async function () {
     console.log("Connection is open...");
