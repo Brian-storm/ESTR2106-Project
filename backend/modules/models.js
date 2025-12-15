@@ -45,8 +45,18 @@ const UserSchema = mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
+// Model 4: Comment
+const CommentSchema = mongoose.Schema({
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    location: { type: mongoose.Schema.Types.ObjectId, ref: 'Location' },
+    comment: { type: String },
+    date: { type: Date, default: Date.now }
+});
+const CommentModel = mongoose.model("Comment", CommentSchema);
+
 module.exports = {
     Event,
     Location,
-    User
+    User,
+    CommentModel
 };

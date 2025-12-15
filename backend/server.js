@@ -8,7 +8,7 @@ const session = require('express-session')
 
 const PORT = 5000;
 const app = express();
-const { Event, Location, User } = require("./modules/models");
+const { Event, Location, User, CommentModel } = require("./modules/models");
 const { districts } = require("./modules/district");
 
 // BASIC SETUP
