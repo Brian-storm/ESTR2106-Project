@@ -560,9 +560,6 @@ app.get("/api/locations/:locationId/comments", async (req, res) => {
             path: 'user',
             select: 'username -_id'
         });
-        if (!comments) {
-            return res.status(404).json({ error: "Location not found" });
-        }
         res.json(comments);
     } catch (error) {
         console.error("Error fetching location:", error);
