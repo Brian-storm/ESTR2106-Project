@@ -4,11 +4,10 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
-const { Event, Location, User } = require('./modules/models');
+const { Event, Location, User, CommentModel } = require('./modules/models');
 
 const PORT = 5000;
 const app = express();
-const { Event, Location, User, CommentModel } = require("./modules/models");
 
 mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db');
 const db = mongoose.connection;
