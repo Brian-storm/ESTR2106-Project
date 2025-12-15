@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -8,11 +7,7 @@ const session = require('express-session')
 
 const PORT = 5000;
 const app = express();
-const { Event, Location, User } = require("./modules/models");
-const { districts } = require("./modules/district");
 
-// BASIC SETUP
-// note that the database 'ESTR2106db' will be created after run
 mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db');
 const db = mongoose.connection;
 
@@ -20,14 +15,58 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Connection error:'));
 
 // Development Stage:
-let development = 0;  // To delete when production(?)
+let development = 1;  // To delete when production
 if (development) {
-    const cors = require('cors');  // not necessary as proxy is set to localhost:5000
+    const cors = require('cors');
     app.use(cors());
 }
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Mongoose Models
+// Model 1: Event
+const EventSchema = mongoose.Schema({
+    title: { type: String, required: true },
+    venue: { type: String, required: true },
+    date: { type: String, required: true },
+    time: { type: String, required: true },
+    desc: { type: String },
+    presenter: { type: String, required: true },
+    eventId: { type: String, unique: true }
+});
+const Event = mongoose.model("Event", EventSchema);
+
+// Model 2: Location
+const LocationSchema = mongoose.Schema({
+    name: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+    venueId: { type: String, unique: true },
+    district: { type: String }
+})
+const Location = mongoose.model("Location", LocationSchema);
+
+// Model 3: User
+const UserSchema = mongoose.Schema({
+    username: {
+        type: String,
+        required: [true, "Username is required"]
+    },
+    password: {
+        type: String,
+        required: [true, "Password is required"]
+    },
+    role: {
+        type: String
+    },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Location'
+    }]
+});
+const User = mongoose.model("User", UserSchema);
 
 // Upon Successful Opening of the database
 db.once('open', async function () {
@@ -35,7 +74,7 @@ db.once('open', async function () {
     const server = app.listen(PORT);
 })
 
-// Before closing the server
+// Before closing the DB
 process.once('SIGINT', async () => {
     console.log('App exiting, cleaning up...');
     // await Event.deleteMany({});
@@ -54,9 +93,9 @@ app.use(session({
     rolling: true,
     saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 60, // 60 minutes
+        maxAge: 1000 * 60 * 5, // 5 minutes
         httpOnly: true,
-        secure: false, // to be set to true when production
+        secure: false, // Set to true in production with HTTPS
     }
 }));
 
@@ -72,6 +111,66 @@ const checkSession = (req, res, next) => {
     next();
 };
 app.use(checkSession);
+
+// Analyze district by referring to subdistrict name first to reduce fetching
+const { districtMapping } = require("./modules/district");
+const MatchDistrict = (venuee) => {
+    for (let districtName in districtMapping) {
+        if (venuee.includes(districtName)) {
+            return districtName + " District";
+        }
+
+        for (let subDistrictName of districtMapping[districtName]) {
+            if (venuee.includes(subDistrictName)) {
+                return districtName + " District";
+            }
+        }
+    }
+    return null;
+}
+
+const districtCache = new Map();
+let lastCall = 0;
+
+const fetchDistrict = async (lat, lon) => {
+    // Create cache key from coordinates (rounded to 4 decimals)
+    const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+
+    // Return cached result if available
+    if (districtCache.has(cacheKey)) {
+        console.log(`Using cached district for ${cacheKey}`);
+        return districtCache.get(cacheKey);
+    }
+
+    // Rate limiting
+    const wait = 1100 - (Date.now() - lastCall);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    lastCall = Date.now();
+
+    try {
+        const res = await fetch(
+            // Add the language parameter explicitly
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=en`,
+            {
+                signal: AbortSignal.timeout(3000),
+                headers: { 'User-Agent': 'ESTR2106-App/1.0' }
+            }
+        );
+
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        const district = data.address?.city_district || data.address?.city || null;
+
+        // Cache the result
+        if (district) districtCache.set(cacheKey, district);
+
+        return district;
+
+    } catch {
+        return null;
+    }
+};
 
 // FetchXML - Fetch data from gov dataset XML link
 async function FetchXML(req, res, next) {
@@ -111,48 +210,11 @@ async function FetchXML(req, res, next) {
 
         let venueEventsPairs = [];
 
-        const groupByDistrict = {
-            "Central and Western": [],
-            "Wan Chai": [],
-            "Eastern": [],
-            "Southern": [],
-
-            "Yau Tsim Mong": [],
-            "Sham Shui Po": [],
-            "Kowloon City": [],
-            "Wong Tai Sin": [],
-            "Kwun Tong": [],
-
-            "Kwai Tsing": [],
-            "Tsuen Wan": [],
-            "Tuen Mun": [],
-            "Yuen Long": [],
-            "North": [],
-            "Tai Po": [],
-            "Sha Tin": [],
-            "Sai Kung": [],
-            "Islands": []
-        };
-        const notGrouped = []
-
         for (let venue of req.venueData) {
+            if (!venue.latitude || !venue.longitude) continue;
+            let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
 
-            let isGrouped = 0;
-            // pairing venues with the 18 districts
-            for (let districtName in districts) {
-                for (let subDistrict of districts[districtName]) {
-                    if (venue.venuee.includes(subDistrict)) {
-                        groupByDistrict[districtName].push(venue.venuee);
-                        isGrouped = 1;
-                    }
-                }
-            }
-            if (!isGrouped) {
-                notGrouped.push(venue.venuee);
-            }
-
-            let filteredEvents = req.eventData.filter((item) =>
-                (venue['@_id'] === String(item.venueid)) && !venue.venuee.includes("Venues in"));
+            if (filteredEvents.length < 3) continue;
 
             const cleansedEvents = [];
 
@@ -168,22 +230,11 @@ async function FetchXML(req, res, next) {
                         eventId: event['@_id']
                     };
 
-                    // Check if event exists using eventId
-                    const existingEvent = await Event.findOne({
-                        eventId: event['@_id']
-                    });
-
-                    let savedEvent;
-                    if (existingEvent) {
-                        savedEvent = await Event.findByIdAndUpdate(
-                            existingEvent._id,
-                            { $set: eventData },
-                            { new: true }
-                        );
-                    } else {
-                        savedEvent = new Event(eventData);
-                        await savedEvent.save();
-                    }
+                    const savedEvent = await Event.updateOne(
+                        { eventId: eventData.eventId },
+                        { $set: eventData },
+                        { upsert: true }
+                    );
 
                     cleansedEvents.push({
                         _id: savedEvent._id,
@@ -201,31 +252,43 @@ async function FetchXML(req, res, next) {
             }
 
             try {
-                const locationData = {
-                    name: venue.venuee,
-                    latitude: venue.latitude,
-                    longitude: venue.longitude,
-                    events: cleansedEvents.map(event => event._id),
-                    venueId: venue['@_id']  // Store the original venue ID
-                };
-
                 // Check if location exists using venueId
                 const existingLocation = await Location.findOne({
                     venueId: venue['@_id']
                 });
 
                 let savedLocation;
+                let districtName;
+                // direct find first shld be faster(?)
+                if (districtName = MatchDistrict(venue.venuee)) {
+                    // districtName is found, skip
+                    // if name does not include subdistrict, lookup DB or fetch it
+                } else if (existingLocation && existingLocation.district) {
+                    districtName = existingLocation.district;
+                } else {
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                }
+
+                const locationData = {
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    events: cleansedEvents.map(event => event._id),
+                    venueId: venue['@_id'],  // Store the original venue ID
+                    district: districtName
+                };
+
                 if (existingLocation) {
                     savedLocation = await Location.findByIdAndUpdate(
                         existingLocation._id,
                         { $set: locationData },
                         { new: true }
                     );
-                    // console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
+                    console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
                 } else {
                     savedLocation = new Location(locationData);
                     await savedLocation.save();
-                    // console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
+                    console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
                 }
 
                 venueEventsPairs.push({
@@ -234,7 +297,8 @@ async function FetchXML(req, res, next) {
                     latitude: locationData.latitude,
                     longitude: locationData.longitude,
                     events: cleansedEvents,
-                    eventsCount: cleansedEvents.length
+                    eventsCount: cleansedEvents.length,
+                    district: districtName
                 });
             } catch (err) {
                 console.log("Failed to save/update location", err);
@@ -242,11 +306,6 @@ async function FetchXML(req, res, next) {
         }
 
         req.venueEventsPairs = venueEventsPairs;
-        req.groupByDistrict = groupByDistrict;
-        req.notGrouped = notGrouped;
-        console.log(groupByDistrict);
-        console.log();
-        console.log(notGrouped);
 
         next();
 
@@ -262,8 +321,6 @@ app.use('/api/fetchEvents', FetchXML);
 
 // Routes
 app.get('/', (req, res) => {
-
-    // example cookie
     res.cookie('visits', '0', {
         maxAge: '1000' + "0000000",
         expires: new Date(Date.now() + '3600000')
@@ -354,14 +411,11 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        if (req.body.rememberMe) {
-            req.session.userId = user._id;
-            req.session.username = user.username;
-            req.session.role = user.role;
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.role = user.role;
 
-            console.log('Session created successfully for user:', username);
-        }
-
+        console.log('Session created successfully for user:', username);
 
         res.status(200).json({
             success: true,
@@ -411,7 +465,7 @@ app.post('/api/logout', (req, res) => {
 // Fetch data
 app.get('/api/fetchEvents', (req, res) => {
     console.log("Returning venue event pairs...");
-    // console.log(JSON.stringify(req.venueEventsPairs));
+    console.log(JSON.stringify(req.venueEventsPairs));
 
     res.setHeader('Content-Type', 'application/json');
     res.json(req.venueEventsPairs);
@@ -441,3 +495,91 @@ app.get('/api/fetchEvents', (req, res) => {
 //     }
 // });
 
+// 添加 Favorite 相关路由
+app.get('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId)
+            .populate('favorites');
+
+        res.json(user.favorites);
+    } catch (error) {
+        console.error('Error fetching favorites:', error);
+        res.status(500).json({
+            error: 'Failed to fetch favorites'
+        });
+    }
+});
+
+app.post('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const { venueId } = req.body;
+
+        // 查找场地
+        const venue = await Location.findOne({ venueId });
+        if (!venue) {
+            return res.status(404).json({
+                error: 'Venue not found'
+            });
+        }
+
+        const user = await User.findById(req.session.userId);
+
+        // 检查是否已收藏
+        const favoriteIndex = user.favorites.indexOf(venue._id);
+        if (favoriteIndex > -1) {
+            // 取消收藏
+            user.favorites.splice(favoriteIndex, 1);
+            await user.save();
+            return res.json({
+                success: true,
+                message: 'Removed from favorites',
+                isFavorite: false
+            });
+        } else {
+            // 添加收藏
+            user.favorites.push(venue._id);
+            await user.save();
+            return res.json({
+                success: true,
+                message: 'Added to favorites',
+                isFavorite: true
+            });
+        }
+    } catch (error) {
+        console.error('Error updating favorites:', error);
+        res.status(500).json({
+            error: 'Failed to update favorites'
+        });
+    }
+});
+
+app.delete('/api/clearFavorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // 清空收藏数组
+        user.favorites = [];
+        await user.save();
+
+        console.log(`Cleared favorites for user: ${user.username}`);
+
+        res.json({
+            success: true,
+            message: 'All favorites cleared successfully',
+            favorites: []
+        });
+    } catch (error) {
+        console.error('Error clearing favorites:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear favorites'
+        });
+    }
+});
