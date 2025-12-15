@@ -1,9 +1,13 @@
 import "leaflet/dist/leaflet.css";
+import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useEffect, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import L from "leaflet";
+import { Link } from "react-router-dom";
 
 function Map() {
   const [venues, setVenues] = useState([]);
+  const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
 
   useEffect(() => {
     fetch("/api/venues")
@@ -14,13 +18,12 @@ function Map() {
   }, []);
 
   return (
-    <div className="container d-flex flex-column align-items-center">
-      <h2>Map</h2>
+    <div className="w-full flex-grow-1">
       <MapContainer
         center={[22.3193, 114.1694]} // Centered at Hong Kong
         zoom={12}
         scrollWheelZoom={true}
-        style={{ height: "600px", width: "75%" }}
+        style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -30,6 +33,7 @@ function Map() {
           <Marker
             key={index}
             position={{ lat: venue.latitude, lng: venue.longitude }}
+            icon={icon}
           >
             <Popup>{venue.name}</Popup>
           </Marker>
