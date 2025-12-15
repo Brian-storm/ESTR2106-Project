@@ -1,22 +1,41 @@
 import "leaflet/dist/leaflet.css";
 import MarkerIcon from "leaflet/dist/images/marker-icon.png";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import L from "leaflet";
+
+const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
 
 function Map() {
   const [venues, setVenues] = useState([]);
   const [selectedVenue, setSelectedVenue] = useState(null);
+  const [currentVenueComments, setCurrentVenueComments] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
+  const [commentText, setCommentText] = useState("");
+  const [addingComment, setAddingComment] = useState(false);
 
   useEffect(() => {
-    fetch("/api/venues")
+    fetch("/api/locations")
       .then((response) => response.json())
       .then((data) => {
         setVenues(data);
       });
   }, []);
+
+  const fetchCurrentVenueComments = useCallback(() => {
+    fetch("/api/locations/" + venues[selectedVenue]._id + "/comments")
+      .then((response) => response.json())
+      .then((data) => {
+        setCurrentVenueComments(data);
+      });
+  }, [selectedVenue, venues])
+
+  useEffect(() => {
+    if (selectedVenue === null) return;
+
+    setCurrentVenueComments(null);
+    fetchCurrentVenueComments();
+  }, [fetchCurrentVenueComments, selectedVenue, venues])
 
   return (
     <div className="w-full flex-grow-1 position-relative">
@@ -70,12 +89,9 @@ function Map() {
         </button>
         {
           selectedVenue !== null && <>
-            <h3 style={{ marginTop: 0, marginBottom: '15px' }}>{venues[selectedVenue].name}</h3>
+            <div className="mt-0 mb-2 fs-5 fw-bold">{venues[selectedVenue].name}</div>
             {venues[selectedVenue].address && (
               <p><strong>Address:</strong> {venues[selectedVenue].address}</p>
-            )}
-            {venues[selectedVenue].district && (
-              <p><strong>District:</strong> {venues[selectedVenue].district}</p>
             )}
             {venues[selectedVenue].latitude && venues[selectedVenue].longitude && (
               <p><strong>Coordinates:</strong> {venues[selectedVenue].latitude.toFixed(4)}, {venues[selectedVenue].longitude.toFixed(4)}</p>
@@ -86,6 +102,50 @@ function Map() {
                 <p>{venues[selectedVenue].description}</p>
               </div>
             )}
+            {
+              currentVenueComments && currentVenueComments.length > 0 && (
+                <div>
+                  <strong>Comments:</strong>
+                  <div>
+                    {currentVenueComments.map((comment, index) => (
+                      <div key={index} className="text-start mb-2 p-2 border-bottom">
+                        <div>{comment.user.username} at {new Date(comment.date).toLocaleString()} wrote:</div>
+                        <div>
+                          {comment.comment}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            <div>
+              <strong>Add Comment:</strong>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                setAddingComment(true);
+                fetch(`/api/locations/${venues[selectedVenue]._id}/comments`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ comment: commentText }),
+                }).then(response => response.json())
+                  .then(data => {
+                    if (data.success) {
+                      setCommentText("");
+                      fetchCurrentVenueComments();
+                    }
+                    setAddingComment(false);
+                  });
+              }}>
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  required
+                  style={{ width: '100%', height: '80px', marginBottom: '10px' }}
+                />
+                <button type="submit" style={{ padding: '8px 16px' }} disabled={addingComment}>Submit</button>
+              </form>
+            </div>
           </>
         }
       </div>

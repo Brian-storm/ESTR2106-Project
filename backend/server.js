@@ -428,12 +428,49 @@ app.get('/api/fetchEvents', (req, res) => {
 //     }
 // });
 
-app.get("/api/venues", async (req, res) => {
-  try {
-    const locations = await Location.find({});
-    res.json(locations);
-  } catch (error) {
-    console.error("Error fetching locations:", error);
-    res.status(500).json({ error: "Failed to fetch locations" });
-  }
+app.get("/api/locations", async (req, res) => {
+    try {
+        const locations = await Location.find({});
+        res.json(locations);
+    } catch (error) {
+        console.error("Error fetching locations:", error);
+        res.status(500).json({ error: "Failed to fetch locations" });
+    }
+});
+
+app.get("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    try {
+        const comments = await CommentModel.find({
+            location: locationId
+        }).populate({
+            path: 'user',
+            select: 'username -_id'
+        });
+        if (!comments) {
+            return res.status(404).json({ error: "Location not found" });
+        }
+        res.json(comments);
+    } catch (error) {
+        console.error("Error fetching location:", error);
+        res.status(500).json({ error: "Failed to fetch location" });
+    }
+});
+
+app.post("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    const { comment } = req.body;
+
+    try {
+        const newComment = new CommentModel({
+            user: req.user.userId,
+            location: locationId,
+            comment: comment,
+        });
+        await newComment.save();
+        res.status(201).json({ success: true, message: "Comment added successfully" });
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        res.status(500).json({ success: false, message: "Failed to add comment" });
+    }
 });
