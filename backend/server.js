@@ -112,18 +112,18 @@ const checkSession = (req, res, next) => {
 };
 app.use(checkSession);
 
-
 // Analyze district by referring to subdistrict name first to reduce fetching
-const districts = [
-    "Central and Western", "Wan Chai", "Eastern", "Southern",
-    "Yau Tsim Mong", "Sham Shui Po", "Kowloon City", "Wong Tai Sin", "Kwun Tong",
-    "Kwai Tsing", "Tsuen Wan", "Tuen Mun", "Yuen Long", "North", "Tai Po", "Sha Tin", "Sai Kung", "Islands"
-];
+const { districtMapping } = require("./modules/district");
+const MatchDistrict = (venuee) => {
+    for (let districtName in districtMapping) {
+        if (venuee.includes(districtName)) {
+            return districtName + " District";
+        }
 
-const MatchDistrict = (name) => {
-    for (let district of districts) {
-        if (name.includes(district)) {
-            return district;
+        for (let subDistrictName of districtMapping[districtName]) {
+            if (venuee.includes(subDistrictName)) {
+                return districtName + " District";
+            }
         }
     }
     return null;
