@@ -102,48 +102,46 @@ function Map() {
                 <p>{venues[selectedVenue].description}</p>
               </div>
             )}
-            {
-              currentVenueComments && currentVenueComments.length > 0 && (
-                <div>
-                  <strong>Comments:</strong>
-                  <div>
-                    {currentVenueComments.map((comment, index) => (
-                      <div key={index} className="text-start mb-2 p-2 border-bottom">
-                        <div>{comment.user.username} at {new Date(comment.date).toLocaleString()} wrote:</div>
-                        <div>
-                          {comment.comment}
-                        </div>
-                      </div>
-                    ))}
+            <div className="d-flex flex-column mt-3 align-items-start w-100">
+              <strong>Comments</strong>
+              {
+                currentVenueComments &&
+                currentVenueComments.length > 0 &&
+                currentVenueComments.map((comment, index) => (
+                  <div key={index} className="text-start mb-2 p-2 border-bottom w-100">
+                    <div>{comment.user.username} at {new Date(comment.date).toLocaleString()} wrote:</div>
+                    <div>
+                      {comment.comment}
+                    </div>
                   </div>
-                </div>
-              )
-            }
-            <div>
-              <strong>Add Comment:</strong>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                setAddingComment(true);
-                fetch(`/api/locations/${venues[selectedVenue]._id}/comments`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ comment: commentText }),
-                }).then(response => response.json())
-                  .then(data => {
-                    if (data.success) {
-                      setCommentText("");
-                      fetchCurrentVenueComments();
-                    }
-                    setAddingComment(false);
-                  });
-              }}>
+                ))
+              }
+              <form
+                className="d-flex flex-column w-100 mt-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setAddingComment(true);
+                  fetch(`/api/locations/${venues[selectedVenue]._id}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ comment: commentText }),
+                  }).then(response => response.json())
+                    .then(data => {
+                      if (data.success) {
+                        setCommentText("");
+                        fetchCurrentVenueComments();
+                      }
+                      setAddingComment(false);
+                    });
+                }}
+              >
                 <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   required
-                  style={{ width: '100%', height: '80px', marginBottom: '10px' }}
+                  className="form-control mb-2"
                 />
-                <button type="submit" style={{ padding: '8px 16px' }} disabled={addingComment}>Submit</button>
+                <button type="submit" className="btn btn-primary" disabled={addingComment}>Submit Comment</button>
               </form>
             </div>
           </>
