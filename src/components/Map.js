@@ -22,12 +22,15 @@ function Map() {
       });
   }, []);
 
-  const fetchCurrentVenueComments = useCallback(() => {
-    fetch("/api/locations/" + venues[selectedVenue]._id + "/comments")
-      .then((response) => response.json())
-      .then((data) => {
-        setCurrentVenueComments(data);
-      });
+  const fetchCurrentVenueComments = useCallback(async () => {
+    if (!venues[selectedVenue]) return;
+    try {
+      const res = await fetch("/api/locations/" + venues[selectedVenue]._id + "/comments");
+      const data = await res.json();
+      setCurrentVenueComments(data);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
   }, [selectedVenue, venues])
 
   useEffect(() => {
@@ -35,19 +38,15 @@ function Map() {
 
     setCurrentVenueComments(null);
     fetchCurrentVenueComments();
-  }, [fetchCurrentVenueComments, selectedVenue, venues])
+  }, [fetchCurrentVenueComments, selectedVenue])
 
   return (
     <div className="w-full flex-grow-1 position-relative">
       {/* Backdrop */}
         <div
           onClick={() => setIsPanelOpen(false)}
+          className="position-absolute top-0 start-0 end-0 bottom-0"
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
             zIndex: 999,
             opacity: isPanelOpen ? 1 : 0,
@@ -58,31 +57,21 @@ function Map() {
 
       {/* Side Panel */}
       <div
+        className="position-absolute top-0 bottom-0 bg-white shadow overflow-y-auto p-3"
         style={{
-          position: 'absolute',
-          top: 0,
           left: isPanelOpen ? 0 : '-450px',
-          bottom: 0,
           width: '450px',
-          backgroundColor: 'white',
-          boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.15)',
-          zIndex: 2000,
-          overflowY: 'auto',
-          padding: '1.5rem',
           transition: 'left 0.3s ease-out',
+          zIndex: 1000,
         }}
       >
         <button
           onClick={() => setIsPanelOpen(false)}
+          className="btn btn-light position-absolute fs-5 text-secondary"
           style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            border: 'none',
-            background: 'transparent',
-            fontSize: '24px',
+            top: '1rem',
+            right: '1rem',
             cursor: 'pointer',
-            color: '#666',
           }}
         >
           ×
@@ -118,21 +107,24 @@ function Map() {
               }
               <form
                 className="d-flex flex-column w-100 mt-1"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   setAddingComment(true);
-                  fetch(`/api/locations/${venues[selectedVenue]._id}/comments`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ comment: commentText }),
-                  }).then(response => response.json())
-                    .then(data => {
-                      if (data.success) {
+                  try {
+                    const res = await fetch(`/api/locations/${venues[selectedVenue]._id}/comments`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ comment: commentText }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
                         setCommentText("");
                         fetchCurrentVenueComments();
-                      }
-                      setAddingComment(false);
-                    });
+                    }
+                  } catch (error) {
+                    console.error("Error adding comment:", error);
+                  }
+                  setAddingComment(false);
                 }}
               >
                 <textarea

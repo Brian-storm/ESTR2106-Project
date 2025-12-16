@@ -539,8 +539,8 @@ app.get("/api/locations/:locationId/comments", async (req, res) => {
         });
         res.json(comments);
     } catch (error) {
-        console.error("Error fetching location:", error);
-        res.status(500).json({ error: "Failed to fetch location" });
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ error: "Failed to fetch comments" });
     }
 });
 
