@@ -9,6 +9,8 @@ import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
+import AdminEvents from "./components/AdminEvents";
+import AdminUsers from "./components/AdminUsers";
 
 import './App.css';
 
@@ -109,6 +111,12 @@ function App() {
                 <Route path='/login' element={
                     user ? <Navigate to="/" replace /> : <Login setUser={setUser} />
                 } />
+                <Route path="/admin/events" element={
+                    user && user.role === "admin"? <AdminEvents user={user} />: <Navigate to="/" replace />
+                }/>
+                <Route path="/admin/users" element={
+                    user && user.role === "admin"? <AdminUsers user={user} />: <Navigate to="/" replace />
+                }/>
                 <Route path='*' element={
                     <Navigate to={user ? "/" : "/login"} replace />
                 } />
