@@ -104,7 +104,7 @@ function App() {
                             <Link className="nav-link" to='/login'>Log In</Link>
                         ) : (
                             <>
-                                <span className="nav-link">
+                                <span className="nav-link mx-2">
                                     <i className="bi bi-person me-1"></i>
                                     {user.username}
                                 </span>
@@ -242,11 +242,16 @@ function App() {
 
             {/* Extra Menu for Admin - Additional Bottom Menu */}
             {user && user.role === "admin" && (
-                <div className="d-lg-none fixed-bottom bg-light border-top" style={{
-                    zIndex: 1025,
-                    bottom: '60px', // Position above main bottom nav
-                    height: '50px'
-                }}>
+                <div
+                    className="d-lg-none bg-light border-top"
+                    style={{
+                        position: 'fixed',
+                        zIndex: 1025,
+                        bottom: '75px',
+                        height: '70px',
+                        width: '100%'
+                    }}
+                >
                     <div className="container">
                         <div className="row text-center py-2">
                             <div className="col">
