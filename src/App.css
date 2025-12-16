@@ -45,11 +45,6 @@
     padding-left: 12px;
     padding-right: 12px;
   }
-
-  /* Adjust main content padding for mobile bottom nav */
-  .main-content {
-    padding-bottom: 70px !important;
-  }
 }
 
 /* Ensure buttons are tap-friendly on mobile */
