@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg,
@@ -10,12 +11,32 @@
       #f1f8e9 100%
       /* Light green - booking */
     );
-  overflow: hidden;
+  min-height: 100vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Better mobile responsiveness */
+@media (max-width: 576px) {
+  .navbar-brand {
+    margin-right: 0;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .navbar-nav .nav-link:last-child {
+    border-bottom: none;
+  }
+
+  /* Improve form elements on mobile */
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px !important;
+    /* Prevents zoom on iOS */
+  }
 }
 
 /* Tablet responsiveness */
@@ -41,8 +62,10 @@
   justify-content: center;
 }
 
+/* Prevent horizontal overflow */
 body,
 html {
+  overflow-x: hidden;
   width: 100%;
 }
 
@@ -77,26 +100,80 @@ html {
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Card improvements for mobile */
+@media (max-width: 768px) {
+  .card {
+    margin: 8px;
+    border-radius: 12px;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Mobile optimization */
+@media (max-width: 991.98px) {
+
+  /* Ensure content doesn't hide behind bottom nav */
+  .main-content {
+    padding-bottom: 80px !important;
+  }
+
+  /* Admin menu positioning */
+  .fixed-bottom+.fixed-bottom {
+    bottom: 60px !important;
+  }
+
+  /* Make bottom nav items touch-friendly */
+  .col {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .col a,
+  .col button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Active state for bottom nav */
+.active-nav {
+  color: #0d6efd !important;
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 768px) {
+
+  button,
+  a {
+    min-height: 44px;
   }
 }
