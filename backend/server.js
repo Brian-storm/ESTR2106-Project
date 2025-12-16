@@ -427,6 +427,250 @@ app.get('/api/fetchEvents', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.json(req.venueEventsPairs);
 })
+//fetch data
+app.get("/api/admin/events", async (req, res) => {
+    // Access control
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const events = await Event.find({}).sort({ date: 1 });
+        res.json(events);
+    } catch (err) {
+        console.error("Admin fetch events failed:", err);
+        res.status(500).json({ error: "Failed to fetch events" });
+    }
+});
+//update data
+app.put("/api/admin/events/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const updated = await Event.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        res.json(updated);
+    } catch (err) {
+        console.error("Update failed:", err);
+        res.status(500).json({ error: "Update failed" });
+    }
+});
+//delete data
+app.delete("/api/admin/events/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        await Event.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Delete failed:", err);
+        res.status(500).json({ error: "Delete failed" });
+    }
+});
+//add data
+app.post("/api/admin/events", async (req, res) => {
+    /* ================== ACCESS CONTROL ================== */
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({
+            error: "FORBIDDEN",
+            message: "Admin privileges required"
+        });
+    }
+
+    try {
+        const {
+            title,
+            venue,
+            date,
+            time,
+            presenter,
+            desc
+        } = req.body;
+
+        /* ================== VALIDATION ================== */
+        const missingFields = [];
+
+        if (!title || !title.trim()) missingFields.push("title");
+        if (!venue || !venue.trim()) missingFields.push("venue");
+        if (!date) missingFields.push("date");
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                error: "VALIDATION_ERROR",
+                message: "Missing required fields",
+                fields: missingFields
+            });
+        }
+
+        /* ================== CREATE EVENT ================== */
+        const newEvent = new Event({
+        eventId: crypto.randomUUID(),   // or uuidv4()
+        title: title.trim(),
+        venue: venue.trim(),
+        date,
+        time: time || "TBA",
+        presenter: presenter || "TBA",
+        desc: desc || ""
+    });
+
+        const saved = await newEvent.save();
+
+        return res.status(201).json(saved);
+
+    } catch (err) {
+        /* ================== ERROR IDENTIFICATION ================== */
+        console.error("[ADMIN EVENTS] Create failed:", err);
+
+        // Mongoose validation error
+        if (err.name === "ValidationError") {
+            return res.status(400).json({
+                error: "MONGOOSE_VALIDATION_ERROR",
+                message: err.message,
+                details: err.errors
+            });
+        }
+
+        // Duplicate key error (if you later add unique indexes)
+        if (err.code === 11000) {
+            return res.status(409).json({
+                error: "DUPLICATE_ENTRY",
+                message: "Event already exists"
+            });
+        }
+
+        // Fallback
+        return res.status(500).json({
+            error: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create event"
+        });
+    }
+});
+
+// ================== ADMIN: FETCH USERS ==================
+app.get("/api/admin/users", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const users = await User.find({}, "-password").sort({ username: 1 });
+        res.json(users);
+    } catch (err) {
+        console.error("Admin fetch users failed:", err);
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+});
+
+// ================== ADMIN: CREATE USER ==================
+app.post("/api/admin/users", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const { username, password, role } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                error: "VALIDATION_ERROR",
+                message: "Username and password are required"
+            });
+        }
+
+        const existing = await User.findOne({ username });
+        if (existing) {
+            return res.status(409).json({
+                error: "DUPLICATE_USER",
+                message: "Username already exists"
+            });
+        }
+
+        const newUser = new User({
+            username: username.trim(),
+            password, // (plaintext for now — matches your current system)
+            role: role === "admin" ? "admin" : "user"
+        });
+
+        const saved = await newUser.save();
+
+        res.status(201).json({
+            _id: saved._id,
+            username: saved.username,
+            role: saved.role
+        });
+
+    } catch (err) {
+        console.error("Admin create user failed:", err);
+        res.status(500).json({ error: "Create user failed" });
+    }
+});
+
+// ================== ADMIN: UPDATE USER ==================
+app.put("/api/admin/users/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const { username, role } = req.body;
+
+        const updated = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                ...(username && { username: username.trim() }),
+                ...(role && { role })
+            },
+            { new: true }
+        ).select("-password");
+
+        if (!updated) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(updated);
+
+    } catch (err) {
+        console.error("Admin update user failed:", err);
+        res.status(500).json({ error: "Update user failed" });
+    }
+});
+
+// ================== ADMIN: DELETE USER ==================
+app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        // Optional safety: prevent deleting yourself
+        if (req.session.userId === req.params.id) {
+            return res.status(400).json({
+                error: "INVALID_OPERATION",
+                message: "You cannot delete your own account"
+            });
+        }
+
+        const deleted = await User.findByIdAndDelete(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error("Admin delete user failed:", err);
+        res.status(500).json({ error: "Delete user failed" });
+    }
+});
+
 
 
 // 添加 Favorite 相关路由
