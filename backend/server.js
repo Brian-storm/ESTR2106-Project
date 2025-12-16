@@ -4,7 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
-const { Event, Location, User } = require('./modules/models');
+const { Event, Location, User, Comment } = require('./modules/models');
 const { isPointInPolygon } = require("./utils");
 
 const PORT = 5000;
@@ -735,5 +735,49 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
             success: false,
             error: 'Failed to clear favorites'
         });
+    }
+});
+
+app.get("/api/locations", async (req, res) => {
+    try {
+        const locations = await Location.find({});
+        res.json(locations);
+    } catch (error) {
+        console.error("Error fetching locations:", error);
+        res.status(500).json({ error: "Failed to fetch locations" });
+    }
+});
+
+app.get("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    try {
+        const comments = await Comment.find({
+            location: locationId
+        }).populate({
+            path: 'user',
+            select: 'username -_id'
+        });
+        res.json(comments);
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ error: "Failed to fetch comments" });
+    }
+});
+
+app.post("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    const { comment } = req.body;
+
+    try {
+        const newComment = new Comment({
+            user: req.user.userId,
+            location: locationId,
+            comment: comment,
+        });
+        await newComment.save();
+        res.status(201).json({ success: true, message: "Comment added successfully" });
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        res.status(500).json({ success: false, message: "Failed to add comment" });
     }
 });
