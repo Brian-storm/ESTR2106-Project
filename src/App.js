@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 
 import Home from './components/Home';
 import Location from './components/Location';
@@ -20,8 +20,6 @@ import './App.css';
 function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const location = useLocation();
-    const isMapPage = location.pathname === '/map';
 
     async function checkAuth() {
         try {
@@ -153,7 +151,7 @@ function App() {
             </div>
 
             {/* Main Content - Adjusted padding for mobile */}
-            <div className={`main-content ${isMapPage? "mobile-fullscreen" : ""} w-100 flex-grow-1 position-relative overflow-auto`}>
+            <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
@@ -205,7 +203,7 @@ function App() {
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Events</small>
                                 </Link>
                             </div>
-                            <div className="col mobile-fullscreen">
+                            <div className="col">
                                 <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/map'>
                                     <i className="bi bi-map fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Map</small>
