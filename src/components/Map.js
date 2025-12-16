@@ -1,3 +1,4 @@
+import "./Map.css"
 import "leaflet/dist/leaflet.css";
 import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useCallback, useEffect, useState } from "react";
@@ -62,8 +63,8 @@ function Map() {
       <div
         className="position-absolute top-0 bottom-0 bg-white shadow overflow-y-auto p-3"
         style={{
-          left: isPanelOpen ? 0 : '-450px',
-          width: '450px',
+          left: isPanelOpen ? 0 : 'calc(var(--side-panel-width) * -1)',
+          width: 'var(--side-panel-width)',
           transition: 'left 0.3s ease-in-out',
           zIndex: 2000,
         }}
