@@ -517,3 +517,18 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
         });
     }
 });
+
+
+// Extra Feature 1 - Chatbot
+const { chat } = require('./modules/chatbot');
+app.post('/api/chatbot', async (req, res) => {
+    const userInput = req.body.userInput;
+    const selectedVenues = req.body.selectedVenues;
+
+    if (!userInput) {
+        res.send("No user input");
+    }
+
+    const botResponse = await chat(userInput, selectedVenues);
+    res.send(botResponse);
+});

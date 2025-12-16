@@ -10,6 +10,7 @@ import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
 import View from './components/View';
+import ChatWindow from './components/ChatWindow';
 
 import './App.css';
 
@@ -90,6 +91,9 @@ function App() {
                     )}
                 </div>
             </nav>
+
+            {/* Chat Window (always visible) */}
+            <ChatWindow user={user}/>
 
             <Routes>
                 <Route path='/' element={
