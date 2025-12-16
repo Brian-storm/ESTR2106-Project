@@ -44,7 +44,7 @@ function Map() {
   }, [fetchCurrentVenueComments, selectedVenue])
 
   return (
-    <div className="w-full flex-grow-1 position-relative">
+    <div className="w-100 h-100">
       {/* Backdrop */}
         <div
           onClick={() => setIsPanelOpen(false)}

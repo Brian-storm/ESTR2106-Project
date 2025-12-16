@@ -151,7 +151,7 @@ function App() {
             </div>
 
             {/* Main Content - Adjusted padding for mobile */}
-            <div className="main-content" style={{
+            <div className="main-content w-100 flex-grow-1 position-relative" style={{
                 paddingTop: '1rem',
                 paddingBottom: '80px', // Space for bottom navbar
                 minHeight: 'calc(100vh - 56px)'
