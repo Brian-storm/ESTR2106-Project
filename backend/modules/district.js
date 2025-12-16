@@ -1,4 +1,4 @@
-const districts = {
+const districtMapping = {
     "Central and Western": [
         "Kennedy Town", "Shek Tong Tsui", "Sai Ying Pun",
         "Sheung Wan", "Central", "Admiralty", "Mid-levels", "Peak"
@@ -77,5 +77,5 @@ const districts = {
 };
 
 module.exports = {
-    districts
+    districtMapping
 };
