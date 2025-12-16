@@ -50,6 +50,14 @@
   .main-content {
     padding-bottom: 70px !important;
   }
+
+  .mobile-fullscreen {
+    padding-bottom: 0px !important;
+  }
+}
+
+.mobile-fullscreen #main-render{
+  padding-bottom: 0px;
 }
 
 /* Ensure buttons are tap-friendly on mobile */
