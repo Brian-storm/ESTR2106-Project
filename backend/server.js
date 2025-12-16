@@ -163,7 +163,7 @@ const updateData = async (req, res, next) => {
             update: {
                 $set: {
                     title: event.titlee || "Untitled",
-                    venueId: event.venueId || "TBA",
+                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
                     date: event.predateE || "TBA",
                     time: event.progtimee || "TBA",
                     desc: event.desce || "",
@@ -176,6 +176,10 @@ const updateData = async (req, res, next) => {
     }))
 
     await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
+    
+    req.venueData = req.venueData.filter(venue => {
+        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
+    });
 
     await Promise.all(req.venueData.map(async (venue) => {
         if (venue.latitude === '' || venue.longitude === '') {
@@ -447,8 +451,12 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
 });
 
 app.get("/api/locations", async (req, res) => {
+    let venueIds = req.query.venueIds ? req.query.venueIds.split(',') : [];
     try {
-        const locations = await Location.find({});
+        const locations = venueIds.length > 0 ? await Location.find({ venueId: { $in: venueIds } }) : await Location.find({});
+        await Promise.all(venueIds.map(async (venueId, index) => {
+            locations[index]._doc.eventCount = await Event.countDocuments({ venueId });
+        }));
         res.json(locations);
     } catch (error) {
         console.error("Error fetching locations:", error);

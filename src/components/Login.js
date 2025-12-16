@@ -98,15 +98,15 @@ function Login(props) {
                 const selected = shuffled.slice(0, 10);
                 
                 // 保存到 localStorage
-                localStorage.setItem('selectedVenues', JSON.stringify(selected));
+                localStorage.setItem('venues', JSON.stringify(selected.map(venue => venue.venueId)));
                 console.log("Saved venues to localStorage");
             } else {
                 console.warn("No suitable venues found");
-                localStorage.removeItem('selectedVenues');
+                localStorage.removeItem('venues');
             }
         } catch (error) {
             console.error('Error fetching venues data:', error);
-            localStorage.removeItem('selectedVenues');
+            localStorage.removeItem('venues');
         }
     };
 
