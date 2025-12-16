@@ -1,7 +1,7 @@
 import "leaflet/dist/leaflet.css";
 import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useCallback, useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 
 const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
@@ -153,7 +153,9 @@ function Map() {
         zoom={12}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
       >
+        <ZoomControl position="topright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
