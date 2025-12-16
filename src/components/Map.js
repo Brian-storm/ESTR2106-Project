@@ -51,7 +51,7 @@ function Map() {
           className="position-absolute top-0 start-0 end-0 bottom-0"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            zIndex: 999,
+            zIndex: 1999,
             opacity: isPanelOpen ? 1 : 0,
             pointerEvents: isPanelOpen ? 'auto' : 'none',
             transition: 'opacity 0.3s',
@@ -65,7 +65,7 @@ function Map() {
           left: isPanelOpen ? 0 : '-450px',
           width: '450px',
           transition: 'left 0.3s ease-in-out',
-          zIndex: 1000,
+          zIndex: 2000,
         }}
       >
         <div className="w-100 text-start mb-3">
