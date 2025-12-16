@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 // Model 1: Event
 const EventSchema = mongoose.Schema({
     title: { type: String, required: true },
-    venue: { type: String, required: true },
+    venueId: { type: String, required: true },
     date: { type: String, required: true },
     time: { type: String, required: true },
     desc: { type: String },
@@ -20,7 +20,7 @@ const LocationSchema = mongoose.Schema({
     name: { type: String },
     latitude: { type: Number },
     longitude: { type: Number },
-    events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+    district: { type: String },
     venueId: { type: String, unique: true }
 })
 const Location = mongoose.model("Location", LocationSchema);
