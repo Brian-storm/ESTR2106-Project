@@ -1,5 +1,16 @@
 .App {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg,
+      #e3f2fd 0%,
+      /* Light blue - calendar */
+      #f3e5f5 50%,
+      /* Light purple - events */
+      #f1f8e9 100%
+      /* Light green - booking */
+    );
+  overflow: hidden;
 }
 
 .App-logo {
@@ -7,6 +18,60 @@
   pointer-events: none;
 }
 
+/* Tablet responsiveness */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Adjust main content padding for mobile bottom nav */
+  .main-content {
+    padding-bottom: 70px !important;
+  }
+}
+
+/* Ensure buttons are tap-friendly on mobile */
+.btn,
+.nav-link {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body,
+html {
+  width: 100%;
+}
+
+/* Smooth transitions */
+.navbar-collapse {
+  transition: all 0.3s ease;
+}
+
+/* Better touch targets */
+@media (max-width: 768px) {
+  .nav-item {
+    margin: 2px 0;
+  }
+
+  /* Make sure the bottom nav doesn't cover content */
+  .fixed-bottom {
+    z-index: 1030;
+  }
+}
+
+/* Improve visibility for active states */
+.nav-link.active {
+  font-weight: 600;
+  color: #0d6efd !important;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Loading states */
+>>>>>>> Stashed changes
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
