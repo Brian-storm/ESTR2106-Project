@@ -3,6 +3,7 @@ import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useCallback, useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
+import { Link } from "react-router-dom";
 
 const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
 
@@ -53,7 +54,7 @@ function Map() {
             zIndex: 999,
             opacity: isPanelOpen ? 1 : 0,
             pointerEvents: isPanelOpen ? 'auto' : 'none',
-            transition: 'opacity 0.3s ease-out',
+            transition: 'opacity 0.3s',
           }}
         />
 
@@ -63,21 +64,22 @@ function Map() {
         style={{
           left: isPanelOpen ? 0 : '-450px',
           width: '450px',
-          transition: 'left 0.3s ease-out',
+          transition: 'left 0.3s ease-in-out',
           zIndex: 1000,
         }}
       >
-        <button
-          onClick={() => setIsPanelOpen(false)}
-          className="btn btn-light position-absolute fs-5 text-secondary"
-          style={{
-            top: '1rem',
-            right: '1rem',
-            cursor: 'pointer',
-          }}
-        >
-          ×
-        </button>
+        <div className="w-100 text-start mb-3">
+          <Link
+            onClick={() => setIsPanelOpen(false)}
+            className="link-secondary link-opacity-100-hover link-underline-opacity-0"
+            style={{
+              cursor: 'pointer',
+            }}
+            to="/map"
+          >
+            <i class="bi bi-chevron-left"></i> Go Back
+          </Link>
+        </div>
         {
           selectedVenue !== null && <>
             <div className="mt-0 mb-2 fs-5 fw-bold">{venues[selectedVenue].name}</div>
