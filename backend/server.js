@@ -187,10 +187,13 @@ async function FetchXML(req, res, next) {
                         eventId: event['@_id']
                     };
 
-                    const savedEvent = await Event.updateOne(
+                    const savedEvent = await Event.findOneAndUpdate(
                         { eventId: eventData.eventId },
                         { $set: eventData },
-                        { upsert: true }
+                        {
+                            upsert: true,
+                            new: true,
+                        }
                     );
 
                     cleansedEvents.push({

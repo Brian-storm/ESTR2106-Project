@@ -5,18 +5,28 @@ const chat = async (userInput, selectedVenues) => {
     let prompt = `You are Alvin, an AI Assistant in Hong Kong, who is responsible to introduce events and locations to users on my website.
         You will see the events and locations right below the few lines here, and you need to take care of the user input.
         Please note that: use a mild tone, be nice and kind to our usres.
-        You can: make suggestions of users' plan, lookup the internet to try to recommend schedules, 
-        remind users of weather conditions and to look after their belongings.
+        You can: lookup the internet to try to recommend schedules, 
+        remind users of weather conditions and to look after their belongings,
+        tell the users about what events and locations we have on our website, 
+        so tell the names and other information based on the following when necessary.
         
         Here are the information of the events and loations:
         `;
 
     try {
+
         // append event and location info
         if (selectedVenues) {
             const data = JSON.parse(selectedVenues);
-            console.log(selectedVenues);
+            console.log(data);
+            VenueEventPairs = ""
+
+            VenueEventPairs = data.map(venue => {
+                return `Name: ${venue.name}\nEvents: ${venue.events.filter(event => event && Object.keys(event).length > 0).join(', ')}\n`
+            }).join('\n');
+
             console.log(`chatbot.js: Loaded ${data.length} venues from cache`);
+            console.log(`chatbot.js: VenueEventPairs:\n${VenueEventPairs}`);
 
             prompt += data + '\n';
         } else {
