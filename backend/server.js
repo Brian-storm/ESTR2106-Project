@@ -4,7 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
-const { Event, Location, User, CommentModel } = require('./modules/models');
+const { Event, Location, User, Comment } = require('./modules/models');
 
 const PORT = 5000;
 const app = express();
@@ -531,7 +531,7 @@ app.get("/api/locations", async (req, res) => {
 app.get("/api/locations/:locationId/comments", async (req, res) => {
     const locationId = req.params.locationId;
     try {
-        const comments = await CommentModel.find({
+        const comments = await Comment.find({
             location: locationId
         }).populate({
             path: 'user',
@@ -549,7 +549,7 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
     const { comment } = req.body;
 
     try {
-        const newComment = new CommentModel({
+        const newComment = new Comment({
             user: req.user.userId,
             location: locationId,
             comment: comment,

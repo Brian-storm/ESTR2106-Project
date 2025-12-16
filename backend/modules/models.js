@@ -52,11 +52,11 @@ const CommentSchema = mongoose.Schema({
     comment: { type: String },
     date: { type: Date, default: Date.now }
 });
-const CommentModel = mongoose.model("Comment", CommentSchema);
+const Comment = mongoose.model("Comment", CommentSchema);
 
 module.exports = {
     Event,
     Location,
     User,
-    CommentModel
+    Comment
 };
