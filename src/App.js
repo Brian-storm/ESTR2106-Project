@@ -89,10 +89,10 @@ function App() {
                         {user && user.role === "admin" && (
                             <>
                                 <li className="nav-item">
-                                    <Link className="nav-link text-primary" to='/admin/events'>Manage Events</Link>
+                                    <Link className="nav-link" to='/admin/events'>Manage Events</Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link className="nav-link text-primary" to='/admin/users'>Manage Users</Link>
+                                    <Link className="nav-link" to='/admin/users'>Manage Users</Link>
                                 </li>
                             </>
                         )}
