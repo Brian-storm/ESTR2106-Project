@@ -19,6 +19,8 @@ function Map() {
       .then((response) => response.json())
       .then((data) => {
         setVenues(data);
+      }).catch((error) => {
+        console.error("Error fetching locations:", error);
       });
   }, []);
 
