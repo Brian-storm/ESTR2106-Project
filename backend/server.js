@@ -97,41 +97,11 @@ const MatchDistrict = (venuee) => {
 }
 
 const fetchDistrict = async (lat, lon) => {
-    // Create cache key from coordinates (rounded to 4 decimals)
-    const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-
-    // Return cached result if available
-    if (districtCache.has(cacheKey)) {
-        console.log(`Using cached district for ${cacheKey}`);
-        return districtCache.get(cacheKey);
-    }
-
-    // Rate limiting
-    const wait = 1100 - (Date.now() - lastCall);
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
-    lastCall = Date.now();
-
-    try {
-        const res = await fetch(
-            // Add the language parameter explicitly
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=en`,
-            {
-                signal: AbortSignal.timeout(3000),
-            }
-        );
-
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        const district = data.address?.city_district || data.address?.city || null;
-
-        // Cache the result
-        if (district) districtCache.set(cacheKey, district);
-
-        return district;
-
-    } catch {
-        return null;
+    for (let boundary of districtBoundaries) {
+        const polygon = boundary.geometry.coordinates[0].map(coord => [coord[0], coord[1]]);
+        if (isPointInPolygon(polygon, [lon, lat])) {
+            return boundary.properties.District + " District";
+        }
     }
 };
 

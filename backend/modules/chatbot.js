@@ -1,20 +1,29 @@
+const path = require('path');
 const mongoose = require('mongoose');
 
-// Additional charges will be made when other models will be used.
-models = ["z-ai/glm-4.6v-flash"]  // free; DONT CHANGE!!!
-// Additional charges will be made when other models will be used.
+// Load environment variables from .env file
+const result = require('dotenv').config({
+    path: path.join(__dirname, '..', '.env')  // Go up one level from modules/
+});
+
+const model = process.env.AI_MODEL
+const API_KEY = process.env.API_KEY
+
+console.log("AI model:", model);
 
 const chat = async (userInput, selectedVenues) => {
     let prompt = `You are Alvin, an AI Assistant in Hong Kong, who is responsible to introduce events and locations to users on my website.
-        1. You will see the events and locations below, and you need to take care of the user input.
-        2. Be nice and kind to our usres.
-        3. You can lookup the internet to try to recommend schedules or suggest activities, 
-        tell the users about what events and locations we have on our website, 
-        4. Tell the names and other information based on the following when necessary.
-        5. give short but accurate reply, i.e., always give two to three examples only.
-        
-        Here are the information of the events and loations:
-        `;
+
+Rules:
+1. Be nice and kind to our users (you can greet them).
+2. Use the provided event and location information when relevant.
+3. Give short but accurate replies (two to three examples only).
+4. Format properly with indentation and start on new lines.
+5. Do NOT use markdown (no **, ##, etc.), but you can use colons (:) for emphasis.
+6. If user input is irrelevant to events/activities/programmes/cultures/locations/venues, reply: "I do not understand the question. Could you please try again?"
+
+Available information:
+`;
 
     try {
 
@@ -41,7 +50,7 @@ const chat = async (userInput, selectedVenues) => {
                                 '---\n'
                             );
                         })
-                        .join('')
+                            .join('')
 
                         return `${venueInfo}:\n${eventInfo}\n`;
                     })
@@ -73,11 +82,11 @@ const chat = async (userInput, selectedVenues) => {
             timeout: 1000 * 45,
             method: "POST",
             headers: {
-                Authorization: "Bearer sk-ai-v1-658dcd849679ea586c5d428d34d087a7bd1de2505adbf514a1092368494d9700",
+                Authorization: `Bearer ${API_KEY}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: models[0],
+                model: model,
                 messages: [
                     {
                         role: "user",
@@ -102,7 +111,7 @@ const chat = async (userInput, selectedVenues) => {
         console.log("This is the message returned:");
         console.log(data.choices[0].message.content.trim())
 
-        return data.choices[0].message.content.trim().replace(/\*/g, ''); ;
+        return data.choices[0].message.content.trim().replace(/\*/g, '');;
 
     } catch (error) {
         console.error(error);
