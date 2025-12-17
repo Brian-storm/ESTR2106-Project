@@ -105,152 +105,86 @@ const fetchDistrict = async (lat, lon) => {
     }
 };
 
-// FetchXML - Fetch data from gov dataset XML link
-async function FetchXML(req, res, next) {
-    const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
+const updateData = async (req, res, next) => {
     const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
+    const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
 
-    try {
-        console.log("Fetching data for update...");
-        const venueResponse = await fetch(venueUrl);
-        if (!venueResponse.ok) {
-            throw new Error(`HTTP error! status: ${venueResponse.status}`);
-        }
-        console.log("Successfully fetched venue data");
-
-        const eventResponse = await fetch(eventUrl);
-        if (!eventResponse.ok) {
-            throw new Error(`HTTP error, status: ${eventResponse.status}`);
-        }
-        console.log("Successfully fetched event data");
-
-        const parser = new XMLParser({
-            ignoreAttributes: false,
-            attributeNamePrefix: "@_"
-        });
-
-        console.log("Parsing venue data...");
-        const venueText = await venueResponse.text();
-        const venueData = parser.parse(venueText);
-        req.venueData = venueData.venues?.venue || [];
-
-        console.log("Parsing event data...");
-        const eventText = await eventResponse.text();
-        const eventData = parser.parse(eventText);
-        req.eventData = eventData.events?.event || [];
-
-        console.log("Starting data update (not replacement)...");
-
-        let venueEventsPairs = [];
-
-        for (let venue of req.venueData) {
-            if (!venue.latitude || !venue.longitude) continue;
-            let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
-
-            if (filteredEvents.length < 3) continue;
-
-            const cleansedEvents = [];
-
-            for (let event of filteredEvents) {
-                try {
-                    const eventData = {
-                        title: event.titlee || "Untitled",
-                        venue: venue.venuee || "TBA",
-                        date: event.predateE || "TBA",
-                        time: event.progtimee || "TBA",
-                        desc: event.desce || "",
-                        presenter: event.presenterorge || "TBA",
-                        eventId: event['@_id']
-                    };
-
-                    const savedEvent = await Event.findOneAndUpdate(
-                        { eventId: eventData.eventId },
-                        { $set: eventData },
-                        { upsert: true }
-                    );
-
-                    cleansedEvents.push({
-                        _id: savedEvent._id,
-                        title: savedEvent.title,
-                        venue: savedEvent.venue,
-                        date: savedEvent.date,
-                        time: savedEvent.time,
-                        desc: savedEvent.desc,
-                        presenter: savedEvent.presenter,
-                        eventId: savedEvent.eventId
-                    });
-                } catch (err) {
-                    console.log("Failed to save/update event", err);
-                }
-            }
-
-            try {
-                // Check if location exists using venueId
-                const existingLocation = await Location.findOne({
-                    venueId: venue['@_id']
-                });
-
-                let savedLocation;
-                let districtName;
-                // direct find first
-                if (districtName = MatchDistrict(venue.venuee)) {
-                    // districtName is found, skip
-                    // if name does not include subdistrict, lookup DB or fetch it
-                } else if (existingLocation && existingLocation.district) {
-                    districtName = existingLocation.district;
-                } else {
-                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
-                }
-
-                const locationData = {
-                    name: venue.venuee,
-                    latitude: venue.latitude,
-                    longitude: venue.longitude,
-                    events: cleansedEvents.map(event => event._id),
-                    venueId: venue['@_id'],  // Store the original venue ID
-                    district: districtName
-                };
-
-                if (existingLocation) {
-                    savedLocation = await Location.findByIdAndUpdate(
-                        existingLocation._id,
-                        { $set: locationData },
-                        { new: true }
-                    );
-                    console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
-                } else {
-                    savedLocation = new Location(locationData);
-                    await savedLocation.save();
-                    console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
-                }
-
-                venueEventsPairs.push({
-                    venueId: locationData.venueId,
-                    name: locationData.name,
-                    latitude: locationData.latitude,
-                    longitude: locationData.longitude,
-                    events: cleansedEvents,
-                    eventsCount: cleansedEvents.length,
-                    district: districtName
-                });
-            } catch (err) {
-                console.log("Failed to save/update location", err);
-            }
-        }
-
-        req.venueEventsPairs = venueEventsPairs;
-
-        next();
-
-    } catch (error) {
-        console.error('Error in FetchXML:', error);
-        res.status(500).json({
-            error: 'Failed to fetch and process events data',
-            details: error.message
-        });
+    const [venueResponse, eventResponse] = await Promise.all([fetch(venueUrl), fetch(eventUrl)]);
+    if (!venueResponse.ok) {
+        throw new Error(`HTTP error! status: ${venueResponse.status}`);
     }
+    if (!eventResponse.ok) {
+        throw new Error(`HTTP error! status: ${eventResponse.status}`);
+    }
+    console.log("Successfully fetched data");
+
+
+    const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: "@_"
+    });
+
+    console.log("Parsing venue data...");
+    const venueText = await venueResponse.text();
+    const venueData = parser.parse(venueText);
+    req.venueData = venueData.venues?.venue || [];
+
+    console.log("Parsing event data...");
+    const eventText = await eventResponse.text();
+    const eventData = parser.parse(eventText);
+    req.eventData = eventData.events?.event || [];
+
+    const bulkWriteEventData = req.eventData.map(event => ({
+        updateOne: {
+            filter: { eventId: event['@_id'] },
+            update: {
+                $set: {
+                    title: event.titlee || "Untitled",
+                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
+                    date: event.predateE || "TBA",
+                    time: event.progtimee || "TBA",
+                    desc: event.desce || "",
+                    presenter: event.presenterorge || "TBA",
+                    eventId: event['@_id']
+                }
+            },
+            upsert: true
+        }
+    }))
+
+    await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
+    
+    req.venueData = req.venueData.filter(venue => {
+        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
+    });
+
+    await Promise.all(req.venueData.map(async (venue) => {
+        if (venue.latitude === '' || venue.longitude === '') {
+            return;
+        }
+        let location = await Location.findOne({ venueId: venue['@_id'] });
+        if (!location)
+            location = new Location({
+                name: venue.venuee,
+                latitude: venue.latitude,
+                longitude: venue.longitude,
+                venueId: venue['@_id'],  // Store the original venue ID
+            });
+        let districtName = MatchDistrict(venue.venuee);
+        // direct find first
+        if (districtName === null) {
+            if (location && location.district) {
+                districtName = location.district;
+            } else {
+                districtName = await fetchDistrict(venue.latitude, venue.longitude);
+            }
+        }
+        location.district = districtName;
+        await location.save();
+    }));
+
+    next();
 }
-app.use('/api/fetchEvents', FetchXML);
 
 // Routes
 app.get('/', (req, res) => {
@@ -396,12 +330,12 @@ app.post('/api/logout', (req, res) => {
 
 // CRUD on data - Events and Locations
 // Fetch data
-app.get('/api/fetchEvents', (req, res) => {
+app.get('/api/fetchEvents', updateData, async (req, res) => {
     console.log("Returning venue event pairs...");
-    console.log(JSON.stringify(req.venueEventsPairs));
 
     res.setHeader('Content-Type', 'application/json');
-    res.json(req.venueEventsPairs);
+    const locations = await Location.find({});
+    res.json(locations);
 })
 //fetch data
 app.get("/api/admin/events", async (req, res) => {
@@ -648,7 +582,6 @@ app.delete("/api/admin/users/:id", async (req, res) => {
 });
 
 
-
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {
     try {
@@ -739,8 +672,12 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
 });
 
 app.get("/api/locations", async (req, res) => {
+    let venueIds = req.query.venueIds ? req.query.venueIds.split(',') : [];
     try {
-        const locations = await Location.find({});
+        const locations = venueIds.length > 0 ? await Location.find({ venueId: { $in: venueIds } }) : await Location.find({});
+        await Promise.all(venueIds.map(async (venueId, index) => {
+            locations[index]._doc.eventCount = await Event.countDocuments({ venueId });
+        }));
         res.json(locations);
     } catch (error) {
         console.error("Error fetching locations:", error);
