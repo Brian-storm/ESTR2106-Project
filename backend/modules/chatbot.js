@@ -69,8 +69,8 @@ const chat = async (userInput, selectedVenues) => {
         }
 
         // append user input
-        prompt += `Here is the user Input below. Please address properly with proper format (nice indentation and new line, without odd punctuations such as '**' and '--'):\n${userInput}
-        If you find the userInput is completely irrelevant with the events and locations, simply ignore them and reply: I do not understand the question. Could you please try again?`;
+        prompt += `Here is the user Input below. Please address properly in English with proper format (nice indentation and new line, without odd punctuations such as '**' and '--'):\n${userInput}
+        If you find the userInput is irrelevant with the events/activities/cultures/locations/venues, simply ignore them and reply: I do not understand the question. Could you please try again?`;
 
         const response = await fetch("https://zenmux.ai/api/v1/chat/completions", {
             signal: AbortSignal.timeout(1000 * 45), // 45 second timeout
