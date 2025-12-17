@@ -490,14 +490,14 @@ app.post("/api/admin/events", async (req, res) => {
 
         /* ================== CREATE EVENT ================== */
         const newEvent = new Event({
-        eventId: crypto.randomUUID(),   // or uuidv4()
-        title: title.trim(),
-        venue: venue.trim(),
-        date,
-        time: time || "TBA",
-        presenter: presenter || "TBA",
-        desc: desc || ""
-    });
+            eventId: crypto.randomUUID(),   // or uuidv4()
+            title: title.trim(),
+            venue: venue.trim(),
+            date,
+            time: time || "TBA",
+            presenter: presenter || "TBA",
+            desc: desc || ""
+        });
 
         const saved = await newEvent.save();
 
@@ -741,21 +741,7 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
 
-// Extra Feature 1 - Chatbot
-const { chat } = require('./modules/chatbot');
-app.post('/api/chatbot', async (req, res) => {
-    const userInput = req.body.userInput;
-    const selectedVenues = req.body.selectedVenues;
-
-    if (!userInput) {
-        res.send("No user input");
-    }
-
-    const botResponse = await chat(userInput, selectedVenues);
-    res.send(botResponse);
-=======
 app.get("/api/locations", async (req, res) => {
     try {
         const locations = await Location.find({});
@@ -798,5 +784,19 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
         console.error("Error adding comment:", error);
         res.status(500).json({ success: false, message: "Failed to add comment" });
     }
->>>>>>> bd5c4d52fba95e79c2ecacc7fbc7931841359939
 });
+
+// Extra Feature 1 - Chatbot
+const { chat } = require('./modules/chatbot');
+app.post('/api/chatbot', async (req, res) => {
+    const userInput = req.body.userInput;
+    const selectedVenues = req.body.selectedVenues;
+
+    if (!userInput) {
+        res.send("No user input");
+    }
+
+    const botResponse = await chat(userInput, selectedVenues);
+    res.send(botResponse);
+});
+
