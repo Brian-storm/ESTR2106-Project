@@ -290,7 +290,7 @@ function Home() {
                                     onChange={(e) => setSelectedDistrict(e.target.value)}
                                 >
                                     <option value="">All Districts</option>
-                                    <option value="Central & Western">Central and Western</option>
+                                    <option value="Central and Western">Central & Western</option>
                                     <option value="Wan Chai">Wan Chai</option>
                                     <option value="Eastern">Eastern</option>
                                     <option value="Southern">Southern</option>
