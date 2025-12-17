@@ -4,7 +4,8 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
-const { Event, Location, User } = require('./modules/models');
+const { Event, Location, User, Comment } = require('./modules/models');
+const { isPointInPolygon } = require("./utils");
 
 const PORT = 5000;
 const app = express();
@@ -25,9 +26,18 @@ if (development) {
 app.use(express.json());
 app.use(cookieParser());
 
+const districtBoundaries = [];
+
+const fetchDistrictBoundaries = async () => {
+    const res = await fetch("https://www.had.gov.hk/psi/hong-kong-administrative-boundaries/hksar_18_district_boundary.json");
+    const data = await res.json();
+    districtBoundaries.push(...data.features);
+}
+
 // Upon Successful Opening of the database
 db.once('open', async function () {
     console.log("Connection is open...");
+    await fetchDistrictBoundaries();
     const server = app.listen(PORT);
 })
 
@@ -86,46 +96,12 @@ const MatchDistrict = (venuee) => {
     return null;
 }
 
-const districtCache = new Map();
-let lastCall = 0;
-
 const fetchDistrict = async (lat, lon) => {
-    // Create cache key from coordinates (rounded to 4 decimals)
-    const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
-
-    // Return cached result if available
-    if (districtCache.has(cacheKey)) {
-        console.log(`Using cached district for ${cacheKey}`);
-        return districtCache.get(cacheKey);
-    }
-
-    // Rate limiting
-    const wait = 1100 - (Date.now() - lastCall);
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
-    lastCall = Date.now();
-
-    try {
-        const res = await fetch(
-            // Add the language parameter explicitly
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=en`,
-            {
-                signal: AbortSignal.timeout(3000),
-                headers: { 'User-Agent': 'ESTR2106-App/1.0' }
-            }
-        );
-
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        const district = data.address?.city_district || data.address?.city || null;
-
-        // Cache the result
-        if (district) districtCache.set(cacheKey, district);
-
-        return district;
-
-    } catch {
-        return null;
+    for (let boundary of districtBoundaries) {
+        const polygon = boundary.geometry.coordinates[0].map(coord => [coord[0], coord[1]]);
+        if (isPointInPolygon(polygon, [lon, lat])) {
+            return boundary.properties.District + " District";
+        }
     }
 };
 
@@ -765,6 +741,7 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 
 // Extra Feature 1 - Chatbot
 const { chat } = require('./modules/chatbot');
@@ -778,4 +755,48 @@ app.post('/api/chatbot', async (req, res) => {
 
     const botResponse = await chat(userInput, selectedVenues);
     res.send(botResponse);
+=======
+app.get("/api/locations", async (req, res) => {
+    try {
+        const locations = await Location.find({});
+        res.json(locations);
+    } catch (error) {
+        console.error("Error fetching locations:", error);
+        res.status(500).json({ error: "Failed to fetch locations" });
+    }
+});
+
+app.get("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    try {
+        const comments = await Comment.find({
+            location: locationId
+        }).populate({
+            path: 'user',
+            select: 'username -_id'
+        });
+        res.json(comments);
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ error: "Failed to fetch comments" });
+    }
+});
+
+app.post("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    const { comment } = req.body;
+
+    try {
+        const newComment = new Comment({
+            user: req.user.userId,
+            location: locationId,
+            comment: comment,
+        });
+        await newComment.save();
+        res.status(201).json({ success: true, message: "Comment added successfully" });
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        res.status(500).json({ success: false, message: "Failed to add comment" });
+    }
+>>>>>>> bd5c4d52fba95e79c2ecacc7fbc7931841359939
 });

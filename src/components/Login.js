@@ -68,7 +68,7 @@ function Login(props) {
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 setError(errorData.message || `Login failed: ${response.status}`);
-                window.alert(errorData.message || 'Login failed');
+                // window.alert(errorData.message || 'Login failed');
             }
 
         } catch (error) {
