@@ -8,7 +8,7 @@ const chat = async (userInput, selectedVenues) => {
     let prompt = `You are Alvin, an AI Assistant in Hong Kong, who is responsible to introduce events and locations to users on my website.
         1. You will see the events and locations below, and you need to take care of the user input.
         2. Be nice and kind to our usres.
-        3. You can lookup the internet to try to recommend schedules, 
+        3. You can lookup the internet to try to recommend schedules or suggest activities, 
         tell the users about what events and locations we have on our website, 
         4. Tell the names and other information based on the following when necessary.
         5. give short but accurate reply, i.e., always give two to three examples only.
@@ -20,47 +20,35 @@ const chat = async (userInput, selectedVenues) => {
 
         if (selectedVenues) {
             const parsedSelectedVenues = JSON.parse(selectedVenues);
-            console.log("parsedSelectedVenues:", parsedSelectedVenues);
+            // console.log("parsedSelectedVenues:", parsedSelectedVenues);
 
-            const Location = mongoose.model('Location');
+            const Event = mongoose.model('Event');
 
-            const locations = await Promise.all(
-                parsedSelectedVenues.map(async (venue) => {
-                    return await Location.findOne({ name: venue.name })
-                        .populate('events', 'title date time presenter')
-                        .exec();
-                })
+            const venueEventData = await Promise.all(
+                parsedSelectedVenues
+                    .filter(obj => obj !== null)
+                    .slice(0, 3)
+                    .map(async (venue) => {
+                        const venueInfo = `name: ${venue.name}\n`
+
+                        const events = await Event.find({ venueId: venue.venueId })
+                        eventInfo = events.map(event => {
+                            return (
+                                `title: ${event.title || 'Untitled Event'}\n` +
+                                `date: ${event.date || 'Date not specified'}\n` +
+                                `time: ${event.time || 'Time not specified'}\n` +
+                                `presenter: ${event.presenter || 'Presenter not specified'}\n` +
+                                '---\n'
+                            );
+                        })
+                        .join('')
+
+                        return `${venueInfo}:\n${eventInfo}\n`;
+                    })
             );
 
-            // Filter out null locations
-            const validLocations = locations.filter(loc => loc !== null);
-
-            // Create structured data for the prompt
-            const venueEventData = validLocations.map(loc => {
-                const venueInfo = {
-                    name: loc.name,
-                    events: []
-                };
-
-                if (loc.events && loc.events.length > 0) {
-                    // First filter valid events, then take only first 2
-                    const validEvents = loc.events
-                        .filter(event => event && Object.keys(event).length > 0)
-                        .slice(0, 2);  // Limit to 2 events per venue
-
-                    venueInfo.events = validEvents.map(event => ({
-                        title: event.title || 'Untitled Event',
-                        date: event.date || 'Date not specified',
-                        time: event.time || 'Time not specified',
-                        presenter: event.presenter || 'Presenter not specified'
-                    }));
-                }
-
-                return venueInfo;
-            });
-
-            console.log(`chatbot.js: Loaded ${validLocations.length} venues from cache`);
-            console.log(`chatbot.js: Venue Event Data:`, JSON.stringify(venueEventData, null, 2));
+            console.log(`chatbot.js: Loaded ${parsedSelectedVenues.length} venues from cache`);
+            console.log(`chatbot.js: venueEventData:`, JSON.stringify(venueEventData, null, 2));
 
             // Add to prompt as JSON string
             prompt += JSON.stringify(venueEventData, null, 2) + '\n';
@@ -69,8 +57,16 @@ const chat = async (userInput, selectedVenues) => {
         }
 
         // append user input
-        prompt += `Here is the user Input below. Please address properly in English with proper format (nice indentation and new line, without odd punctuations such as '**' and '--'):\n${userInput}
-        If you find the userInput is irrelevant with the events/activities/cultures/locations/venues, simply ignore them and reply: I do not understand the question. Could you please try again?`;
+        prompt += `--- user input starts ---
+        ${userInput}
+        --- user input ends ---
+
+        From the user input abovePlease address properly in English, and follow the following rules:
+        1. Format properly with indentation and start on new lines.
+        2. (IMPORTANT) Do not use markdown language such as '**', but you can try adding ':' for indicating.
+        
+        If you find the userInput is irrelevant with the your opinions or the events/activities/programmes/cultures/locations/venues mentioned,
+        simply ignore them and reply: I do not understand the question. Could you please try again?`;
 
         const response = await fetch("https://zenmux.ai/api/v1/chat/completions", {
             signal: AbortSignal.timeout(1000 * 45), // 45 second timeout
@@ -95,18 +91,18 @@ const chat = async (userInput, selectedVenues) => {
         })
 
         if (!response.ok) {
-            throw new Error("Failed to call Zenmux API.");
+            throw new Error("Failed to call AI API.");
         }
 
         const data = await response.json();
 
-        console.log("Printing data after aprsing json object");
+        console.log("Printing data after parsing json object");
         console.log(data);
 
         console.log("This is the message returned:");
-        console.log(data.choices[0].message.content)
+        console.log(data.choices[0].message.content.trim())
 
-        return data.choices[0].message.content;
+        return data.choices[0].message.content.trim().replace(/\*/g, ''); ;
 
     } catch (error) {
         console.error(error);

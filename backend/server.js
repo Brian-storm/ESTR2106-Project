@@ -227,7 +227,7 @@ app.get('/', (req, res) => {
 
 // Check Authentication
 app.get('/api/check-auth', (req, res) => {
-    if (req.session && req.session.userId) {
+    if (req.session && req.session.rememberMe && req.session.userId) {
         res.json({
             userId: req.session.userId,
             username: req.session.username,
@@ -260,7 +260,7 @@ app.post('/api/signup', async (req, res) => {
         const newUser = new User({
             username: username,
             password: password,
-            role: 'user'
+            role: 'user',
         });
 
         await newUser.save();
@@ -311,6 +311,7 @@ app.post('/api/login', async (req, res) => {
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.role = user.role;
+        req.session.rememberMe = req.body.rememberMe;
 
         console.log('Session created successfully for user:', username);
 
