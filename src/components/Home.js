@@ -242,7 +242,7 @@ function Home() {
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container-lg mt-4">
             {/* 搜索栏和距离筛选 */}
             <div className="mb-4">
                 <div className="row">
@@ -358,7 +358,7 @@ function Home() {
             </div>
             
             <div className="table-responsive">
-                <table className="table table-striped table-hover">
+                <table className="table table-striped table-hover m-0">
                     <thead className="table-header-clean">
                         <tr>
                             <th scope="col" className="text-center-cell">Venue ID</th>
@@ -485,24 +485,18 @@ function Home() {
                     </div>
                 )}
             </div>
-            <div className="update-info mt-4">
-                <div className="d-flex justify-content-center align-items-center">
-                    <div className="text-center">
-                        <div className="text-muted small">
-                            Last updated time : {dataFetchTime ? 
-                                dataFetchTime.toLocaleString([], { 
-                                    weekday: 'short',
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }) : 
-                                'Loading...'
-                            }
-                        </div>
-                    </div>
-                </div>
+            <div className="d-flex justify-content-center align-items-center text-center text-muted small p-4">
+                Last updated time : {dataFetchTime ? 
+                    dataFetchTime.toLocaleString([], { 
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 
+                    'Loading...'
+                }
             </div>
         </div>
     );

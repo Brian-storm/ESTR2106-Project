@@ -151,11 +151,7 @@ function App() {
             </div>
 
             {/* Main Content - Adjusted padding for mobile */}
-            <div className="main-content w-100 flex-grow-1 position-relative" style={{
-                paddingTop: '1rem',
-                paddingBottom: '80px', // Space for bottom navbar
-                minHeight: 'calc(100vh - 56px)'
-            }}>
+            <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
@@ -192,7 +188,7 @@ function App() {
 
             {/* Mobile Bottom Navigation */}
             {user ? (
-                <div className="d-lg-none fixed-bottom bg-white border-top shadow-lg" style={{ zIndex: 1030 }}>
+                <div className="d-lg-none bg-white border-top" style={{ zIndex: 1030 }}>
                     <div className="container">
                         <div className="row text-center py-2">
                             <div className="col">
@@ -245,11 +241,7 @@ function App() {
                 <div
                     className="d-lg-none bg-light border-top"
                     style={{
-                        position: 'fixed',
                         zIndex: 1025,
-                        bottom: '75px',
-                        height: '70px',
-                        width: '100%'
                     }}
                 >
                     <div className="container">

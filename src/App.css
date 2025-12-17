@@ -11,7 +11,7 @@
       #f1f8e9 100%
       /* Light green - booking */
     );
-  min-height: 100vh;
+  overflow: hidden;
 }
 
 /* Better mobile responsiveness */
@@ -44,11 +44,6 @@
   .container-fluid {
     padding-left: 12px;
     padding-right: 12px;
-  }
-
-  /* Adjust main content padding for mobile bottom nav */
-  .main-content {
-    padding-bottom: 70px !important;
   }
 }
 
@@ -138,11 +133,6 @@ html {
 
 /* Mobile optimization */
 @media (max-width: 991.98px) {
-
-  /* Ensure content doesn't hide behind bottom nav */
-  .main-content {
-    padding-bottom: 80px !important;
-  }
 
   /* Admin menu positioning */
   .fixed-bottom+.fixed-bottom {
