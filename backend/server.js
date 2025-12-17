@@ -401,7 +401,7 @@ app.post('/api/logout', (req, res) => {
 // Fetch data
 app.get('/api/fetchEvents', (req, res) => {
     console.log("Returning venue event pairs...");
-    console.log(JSON.stringify(req.venueEventsPairs));
+    // console.log(JSON.stringify(req.venueEventsPairs));
 
     res.setHeader('Content-Type', 'application/json');
     res.json(req.venueEventsPairs);
@@ -799,4 +799,3 @@ app.post('/api/chatbot', async (req, res) => {
     const botResponse = await chat(userInput, selectedVenues);
     res.send(botResponse);
 });
-

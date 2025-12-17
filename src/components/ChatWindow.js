@@ -101,7 +101,7 @@ function ChatWindow(props) {
     };
 
     return (
-        <div className={`chat-container ${isCollapsed ? 'collapsed' : ''} ${props.user? "active" : "inactive"}`}>
+        <div className={`chat-container ${isCollapsed ? 'collapsed' : ''} ${props?.user?.role}-wrapper ${props?.user? "active" : "inactive"}`}>
             {/* Header */}
             <div
                 className="chat-header bg-gradient-primary text-white rounded-top-3 p-3 shadow-lg"

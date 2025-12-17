@@ -155,6 +155,9 @@ function App() {
 
             {/* Main Content - Adjusted padding for mobile */}
             <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
+                {/* Chat Window (always displayed after login) */}
+                {user && <ChatWindow user={user}/>}
+                
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
