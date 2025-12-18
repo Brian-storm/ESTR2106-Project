@@ -135,54 +135,63 @@ const updateData = async (req, res, next) => {
     const eventData = parser.parse(eventText);
     req.eventData = eventData.events?.event || [];
 
-    const bulkWriteEventData = req.eventData.map(event => ({
+    req.venueData = req.venueData.filter((venue) => {
+        return req.eventData.some(
+            (event) => event.venueid?.toString() === venue["@_id"]
+        );
+    });
+
+    const venueIdMapping = {};
+
+    await Promise.all(
+        req.venueData.map(async (venue) => {
+            if (venue.latitude === "" || venue.longitude === "") {
+                return;
+            }
+            let location = await Location.findOne({ venueId: venue["@_id"] });
+            if (!location)
+                location = new Location({
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    venueId: venue["@_id"], // Store the original venue ID
+                });
+            let districtName = MatchDistrict(venue.venuee);
+            // direct find first
+            if (districtName === null) {
+                if (location && location.district) {
+                    districtName = location.district;
+                } else {
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                }
+            }
+            location.district = districtName;
+            await location.save();
+            venueIdMapping[venue["@_id"]] = location._id;
+        })
+    );
+
+    const bulkWriteEventData = req.eventData.map((event) => ({
         updateOne: {
-            filter: { eventId: event['@_id'] },
+            filter: { eventId: event["@_id"] },
             update: {
                 $set: {
                     title: event.titlee || "Untitled",
-                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
+                    venue: venueIdMapping[event.venueid],
                     date: event.predateE || "TBA",
                     time: event.progtimee || "TBA",
                     desc: event.desce || "",
                     presenter: event.presenterorge || "TBA",
-                    eventId: event['@_id']
-                }
+                    eventId: event["@_id"],
+                },
             },
-            upsert: true
-        }
-    }))
-
-    await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
-    
-    req.venueData = req.venueData.filter(venue => {
-        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
-    });
-
-    await Promise.all(req.venueData.map(async (venue) => {
-        if (venue.latitude === '' || venue.longitude === '') {
-            return;
-        }
-        let location = await Location.findOne({ venueId: venue['@_id'] });
-        if (!location)
-            location = new Location({
-                name: venue.venuee,
-                latitude: venue.latitude,
-                longitude: venue.longitude,
-                venueId: venue['@_id'],  // Store the original venue ID
-            });
-        let districtName = MatchDistrict(venue.venuee);
-        // direct find first
-        if (districtName === null) {
-            if (location && location.district) {
-                districtName = location.district;
-            } else {
-                districtName = await fetchDistrict(venue.latitude, venue.longitude);
-            }
-        }
-        location.district = districtName;
-        await location.save();
+            upsert: true,
+        },
     }));
+
+    await db
+      .collection("events")
+      .bulkWrite(bulkWriteEventData, { ordered: false });
 
     next();
 }
@@ -594,6 +603,29 @@ app.delete("/api/admin/users/:id", async (req, res) => {
     }
 });
 
+app.get("/api/events", async (req, res) => {
+    const venues = req.query.venueIds ? req.query.venueIds.split(",") : [];
+    const filter = venues.length > 0 ? { "venue.venueId": { $in: venues } } : {};
+    try {
+        const events = await Event.aggregate([
+        {
+            $lookup: {
+            from: "locations",
+            localField: "venue",
+            foreignField: "_id",
+            as: "venueDoc",
+            },
+        },
+        { $set: { venue: { $first: "$venueDoc" } } },
+        { $match: filter },
+        { $unset: "venueDoc" },
+        ]);
+        res.json(events);
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch events" });
+    }
+});
 
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {
