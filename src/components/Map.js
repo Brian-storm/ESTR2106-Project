@@ -201,18 +201,20 @@ function Map() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {venues.map((venue, index) => (
-          <Marker
-            key={index}
-            position={{ lat: venue.latitude, lng: venue.longitude }}
-            icon={icon}
-            eventHandlers={{
-              click: () => {
-                navigate(`/map?venueId=${venue.venueId}`);
-              },
-            }}
-          />
-        ))}
+        {venues
+          .filter((venue) => venue.latitude && venue.longitude)
+          .map((venue, index) => (
+            <Marker
+              key={index}
+              position={{ lat: venue.latitude, lng: venue.longitude }}
+              icon={icon}
+              eventHandlers={{
+                click: () => {
+                  navigate(`/map?venueId=${venue.venueId}`);
+                },
+              }}
+            />
+          ))}
       </MapContainer>
     </div>
   );

@@ -196,9 +196,6 @@ const updateData = async (req, res, next) => {
 
     await Promise.all(
         req.venueData.map(async (venue) => {
-            if (venue.latitude === "" || venue.longitude === "") {
-                return;
-            }
             let location = await Location.findOne({ venueId: venue["@_id"] });
             if (!location)
                 location = new Location({
@@ -416,7 +413,8 @@ app.get("/api/calendar/events", async (req, res) => {
     try {
         const events = await Event.find({})
             .sort({ date: 1 })
-            .select("title venue date time presenter desc");
+            .select("title venue date time presenter desc")
+            .populate("venue");
 
         res.json(events);
     } catch (err) {

@@ -171,7 +171,7 @@ function EventRow({ leftLabel, event }) {
                 </div>
 
                 <div className="event-meta">
-                    {event.time} · {event.venue}
+                    {event.time} · {event.venue?.name}
                 </div>
 
                 <div className="event-presenter">
