@@ -1,0 +1,156 @@
+/* 1. 表格样式 - 统一清理 */
+.table {
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 2. 表格表头 - 简洁明了 */
+.table-header-clean {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+}
+
+.table-header-clean th {
+    background: transparent !important;
+    color: white !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 1rem;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+/* 4. 表格内容行 */
+.table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(108, 99, 255, 0.05);
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #333;
+}
+
+/* 5. 排序按钮 - 清晰可见 */
+.sort-btn-header {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-width: 140px;
+    cursor: pointer !important;
+    margin: 0 auto !important;
+    backdrop-filter: blur(4px);
+}
+
+.sort-btn-header:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.sort-btn-header:active {
+    transform: translateY(0) !important;
+}
+
+
+/* 7. 排序箭头样式 */
+.sort-arrow {
+    margin-left: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 8. 文本居中 */
+.text-center-cell {
+    text-align: center !important;
+}
+
+.text-left-cell {
+    text-align: left !important;
+}
+
+/* 9. 响应式设计 */
+@media (max-width: 768px) {
+    .table-header-clean th {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .table tbody td {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .sort-btn-header {
+        min-width: 100px !important;
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .sort-btn-events {
+        min-width: 140px !important;
+        font-size: 0.85rem !important;
+    }
+
+    .sort-arrow {
+        font-size: 0.9rem;
+    }
+}
+
+/* 10. 移除冲突样式 - 删除以下冲突规则 */
+/* 
+.table-dark {
+    background: white !important;
+    color: #333 !important;
+    border-bottom: 2px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.table-dark th {
+    background: white !important;
+    color: #333 !important;
+    border: none !important;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.table thead th:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4092 100%);
+}
+*/
+
+/* 更新时间信息样式 */
+.update-info {
+    padding: 0.75rem 1rem;
+}
+
+.update-info i {
+    font-size: 1.2rem;
+    color: #6c63ff;
+    margin-right: 0.5rem;
+}

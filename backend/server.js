@@ -1,18 +1,15 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
+const { Event, Location, User, Comment } = require('./modules/models');
+const { isPointInPolygon } = require("./utils");
 
 const PORT = 5000;
 const app = express();
-const { Event, Location, User } = require("./modules/models");
-const { districts } = require("./modules/district");
 
-// BASIC SETUP
-// note that the database 'ESTR2106db' will be created after run
 mongoose.connect('mongodb://127.0.0.1:27017/ESTR2106db');
 const db = mongoose.connection;
 
@@ -20,22 +17,31 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Connection error:'));
 
 // Development Stage:
-let development = 0;  // To delete when production(?)
+let development = 1;  // To delete when production
 if (development) {
-    const cors = require('cors');  // not necessary as proxy is set to localhost:5000
+    const cors = require('cors');
     app.use(cors());
 }
 
 app.use(express.json());
 app.use(cookieParser());
 
+const districtBoundaries = [];
+
+const fetchDistrictBoundaries = async () => {
+    const res = await fetch("https://www.had.gov.hk/psi/hong-kong-administrative-boundaries/hksar_18_district_boundary.json");
+    const data = await res.json();
+    districtBoundaries.push(...data.features);
+}
+
 // Upon Successful Opening of the database
 db.once('open', async function () {
     console.log("Connection is open...");
+    await fetchDistrictBoundaries();
     const server = app.listen(PORT);
 })
 
-// Before closing the server
+// Before closing the DB
 process.once('SIGINT', async () => {
     console.log('App exiting, cleaning up...');
     // await Event.deleteMany({});
@@ -54,9 +60,9 @@ app.use(session({
     rolling: true,
     saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 60, // 60 minutes
+        maxAge: 1000 * 60 * 15, // Session lasts for 15 minutes
         httpOnly: true,
-        secure: false, // to be set to true when production
+        secure: false, // Set to true in production with HTTPS
     }
 }));
 
@@ -73,187 +79,115 @@ const checkSession = (req, res, next) => {
 };
 app.use(checkSession);
 
-// FetchXML - Fetch data from gov dataset XML link
-async function FetchXML(req, res, next) {
-    const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
-    const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
-
-    try {
-        console.log("Fetching data for update...");
-        const venueResponse = await fetch(venueUrl);
-        if (!venueResponse.ok) {
-            throw new Error(`HTTP error! status: ${venueResponse.status}`);
+// Analyze district by referring to subdistrict name first to reduce fetching
+const { districtMapping } = require("./modules/district");
+const MatchDistrict = (venuee) => {
+    for (let districtName in districtMapping) {
+        if (venuee.includes(districtName)) {
+            return districtName + " District";
         }
-        console.log("Successfully fetched venue data");
 
-        const eventResponse = await fetch(eventUrl);
-        if (!eventResponse.ok) {
-            throw new Error(`HTTP error, status: ${eventResponse.status}`);
-        }
-        console.log("Successfully fetched event data");
-
-        const parser = new XMLParser({
-            ignoreAttributes: false,
-            attributeNamePrefix: "@_"
-        });
-
-        console.log("Parsing venue data...");
-        const venueText = await venueResponse.text();
-        const venueData = parser.parse(venueText);
-        req.venueData = venueData.venues?.venue || [];
-
-        console.log("Parsing event data...");
-        const eventText = await eventResponse.text();
-        const eventData = parser.parse(eventText);
-        req.eventData = eventData.events?.event || [];
-
-        console.log("Starting data update (not replacement)...");
-
-        let venueEventsPairs = [];
-        
-        const groupByDistrict = {
-            "Central and Western": [],
-            "Wan Chai": [],
-            "Eastern": [],
-            "Southern": [],
-
-            "Yau Tsim Mong": [],
-            "Sham Shui Po": [],
-            "Kowloon City": [],
-            "Wong Tai Sin": [],
-            "Kwun Tong": [],
-
-            "Kwai Tsing": [],
-            "Tsuen Wan": [],
-            "Tuen Mun": [],
-            "Yuen Long": [],
-            "North": [],
-            "Tai Po": [],
-            "Sha Tin": [],
-            "Sai Kung": [],
-            "Islands": []
-        };
-        
-        for (let venue of req.venueData) {
-
-        // pairing venues with the 18 districts
-        for (let districtName in districts) {
-            for (let subDistrict of districts[districtName]) {
-                if (venue.venuee.includes(subDistrict)) {
-                    groupByDistrict[districtName].push(venue.venuee);
-                }
+        for (let subDistrictName of districtMapping[districtName]) {
+            if (venuee.includes(subDistrictName)) {
+                return districtName + " District";
             }
         }
+    }
+    return null;
+}
 
-        let filteredEvents = req.eventData.filter((item) => venue['@_id'] === String(item.venueid));
+const fetchDistrict = async (lat, lon) => {
+    for (let boundary of districtBoundaries) {
+        const polygon = boundary.geometry.coordinates[0].map(coord => [coord[0], coord[1]]);
+        if (isPointInPolygon(polygon, [lon, lat])) {
+            return boundary.properties.District + " District";
+        }
+    }
+};
 
-        const cleansedEvents = [];
+const updateData = async (req, res, next) => {
+    const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
+    const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
 
-        for (let event of filteredEvents) {
-            try {
-                const eventData = {
+    const [venueResponse, eventResponse] = await Promise.all([fetch(venueUrl), fetch(eventUrl)]);
+    if (!venueResponse.ok) {
+        throw new Error(`HTTP error! status: ${venueResponse.status}`);
+    }
+    if (!eventResponse.ok) {
+        throw new Error(`HTTP error! status: ${eventResponse.status}`);
+    }
+    console.log("Successfully fetched data");
+
+
+    const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: "@_"
+    });
+
+    console.log("Parsing venue data...");
+    const venueText = await venueResponse.text();
+    const venueData = parser.parse(venueText);
+    req.venueData = venueData.venues?.venue || [];
+
+    console.log("Parsing event data...");
+    const eventText = await eventResponse.text();
+    const eventData = parser.parse(eventText);
+    req.eventData = eventData.events?.event || [];
+
+    const bulkWriteEventData = req.eventData.map(event => ({
+        updateOne: {
+            filter: { eventId: event['@_id'] },
+            update: {
+                $set: {
                     title: event.titlee || "Untitled",
-                    venue: venue.venuee || "TBA",
+                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
                     date: event.predateE || "TBA",
                     time: event.progtimee || "TBA",
                     desc: event.desce || "",
                     presenter: event.presenterorge || "TBA",
                     eventId: event['@_id']
-                };
-
-                // Check if event exists using eventId
-                const existingEvent = await Event.findOne({
-                    eventId: event['@_id']
-                });
-
-                let savedEvent;
-                if (existingEvent) {
-                    savedEvent = await Event.findByIdAndUpdate(
-                        existingEvent._id,
-                        { $set: eventData },
-                        { new: true }
-                    );
-                } else {
-                    savedEvent = new Event(eventData);
-                    await savedEvent.save();
                 }
-
-                cleansedEvents.push({
-                    _id: savedEvent._id,
-                    title: savedEvent.title,
-                    venue: savedEvent.venue,
-                    date: savedEvent.date,
-                    time: savedEvent.time,
-                    desc: savedEvent.desc,
-                    presenter: savedEvent.presenter,
-                    eventId: savedEvent.eventId
-                });
-            } catch (err) {
-                console.log("Failed to save/update event", err);
-            }
+            },
+            upsert: true
         }
+    }))
 
-        try {
-            const locationData = {
+    await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
+    
+    req.venueData = req.venueData.filter(venue => {
+        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
+    });
+
+    await Promise.all(req.venueData.map(async (venue) => {
+        if (venue.latitude === '' || venue.longitude === '') {
+            return;
+        }
+        let location = await Location.findOne({ venueId: venue['@_id'] });
+        if (!location)
+            location = new Location({
                 name: venue.venuee,
                 latitude: venue.latitude,
                 longitude: venue.longitude,
-                events: cleansedEvents.map(event => event._id),
-                venueId: venue['@_id']  // Store the original venue ID
-            };
-
-            // Check if location exists using venueId
-            const existingLocation = await Location.findOne({
-                venueId: venue['@_id']
+                venueId: venue['@_id'],  // Store the original venue ID
             });
-
-            let savedLocation;
-            if (existingLocation) {
-                savedLocation = await Location.findByIdAndUpdate(
-                    existingLocation._id,
-                    { $set: locationData },
-                    { new: true }
-                );
-                // console.log(`Updated location: ${locationData.name} (VenueID: ${venue['@_id']})`);
+        let districtName = MatchDistrict(venue.venuee);
+        // direct find first
+        if (districtName === null) {
+            if (location && location.district) {
+                districtName = location.district;
             } else {
-                savedLocation = new Location(locationData);
-                await savedLocation.save();
-                // console.log(`Created new location: ${locationData.name} (VenueID: ${venue['@_id']})`);
+                districtName = await fetchDistrict(venue.latitude, venue.longitude);
             }
-
-            venueEventsPairs.push({
-                venueId: locationData.venueId,
-                name: locationData.name,
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                events: cleansedEvents,
-                eventsCount: cleansedEvents.length
-            });
-        } catch (err) {
-            console.log("Failed to save/update location", err);
         }
-    }
-
-    req.venueEventsPairs = venueEventsPairs;
-    req.groupByDistrict = groupByDistrict;
-    console.log(groupByDistrict);
+        location.district = districtName;
+        await location.save();
+    }));
 
     next();
-
-} catch (error) {
-    console.error('Error in FetchXML:', error);
-    res.status(500).json({
-        error: 'Failed to fetch and process events data',
-        details: error.message
-    });
 }
-}
-app.use('/api/fetchEvents', FetchXML);
 
 // Routes
 app.get('/', (req, res) => {
-
-    // example cookie
     res.cookie('visits', '0', {
         maxAge: '1000' + "0000000",
         expires: new Date(Date.now() + '3600000')
@@ -396,35 +330,391 @@ app.post('/api/logout', (req, res) => {
 
 // CRUD on data - Events and Locations
 // Fetch data
-app.get('/api/fetchEvents', (req, res) => {
+app.get('/api/fetchEvents', updateData, async (req, res) => {
     console.log("Returning venue event pairs...");
-    // console.log(JSON.stringify(req.venueEventsPairs));
 
     res.setHeader('Content-Type', 'application/json');
-    res.json(req.venueEventsPairs);
+    const locations = await Location.find({});
+    res.json(locations);
 })
+//fetch data
+app.get("/api/admin/events", async (req, res) => {
+    // Access control
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const events = await Event.find({}).sort({ date: 1 });
+        res.json(events);
+    } catch (err) {
+        console.error("Admin fetch events failed:", err);
+        res.status(500).json({ error: "Failed to fetch events" });
+    }
+});
+//update data
+app.put("/api/admin/events/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const updated = await Event.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        res.json(updated);
+    } catch (err) {
+        console.error("Update failed:", err);
+        res.status(500).json({ error: "Update failed" });
+    }
+});
+//delete data
+app.delete("/api/admin/events/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        await Event.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Delete failed:", err);
+        res.status(500).json({ error: "Delete failed" });
+    }
+});
+//add data
+app.post("/api/admin/events", async (req, res) => {
+    /* ================== ACCESS CONTROL ================== */
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({
+            error: "FORBIDDEN",
+            message: "Admin privileges required"
+        });
+    }
+
+    try {
+        const {
+            title,
+            venue,
+            date,
+            time,
+            presenter,
+            desc
+        } = req.body;
+
+        /* ================== VALIDATION ================== */
+        const missingFields = [];
+
+        if (!title || !title.trim()) missingFields.push("title");
+        if (!venue || !venue.trim()) missingFields.push("venue");
+        if (!date) missingFields.push("date");
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                error: "VALIDATION_ERROR",
+                message: "Missing required fields",
+                fields: missingFields
+            });
+        }
+
+        /* ================== CREATE EVENT ================== */
+        const newEvent = new Event({
+        eventId: crypto.randomUUID(),   // or uuidv4()
+        title: title.trim(),
+        venue: venue.trim(),
+        date,
+        time: time || "TBA",
+        presenter: presenter || "TBA",
+        desc: desc || ""
+    });
+
+        const saved = await newEvent.save();
+
+        return res.status(201).json(saved);
+
+    } catch (err) {
+        /* ================== ERROR IDENTIFICATION ================== */
+        console.error("[ADMIN EVENTS] Create failed:", err);
+
+        // Mongoose validation error
+        if (err.name === "ValidationError") {
+            return res.status(400).json({
+                error: "MONGOOSE_VALIDATION_ERROR",
+                message: err.message,
+                details: err.errors
+            });
+        }
+
+        // Duplicate key error (if you later add unique indexes)
+        if (err.code === 11000) {
+            return res.status(409).json({
+                error: "DUPLICATE_ENTRY",
+                message: "Event already exists"
+            });
+        }
+
+        // Fallback
+        return res.status(500).json({
+            error: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create event"
+        });
+    }
+});
+
+// ================== ADMIN: FETCH USERS ==================
+app.get("/api/admin/users", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const users = await User.find({}, "-password").sort({ username: 1 });
+        res.json(users);
+    } catch (err) {
+        console.error("Admin fetch users failed:", err);
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+});
+
+// ================== ADMIN: CREATE USER ==================
+app.post("/api/admin/users", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const { username, password, role } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                error: "VALIDATION_ERROR",
+                message: "Username and password are required"
+            });
+        }
+
+        const existing = await User.findOne({ username });
+        if (existing) {
+            return res.status(409).json({
+                error: "DUPLICATE_USER",
+                message: "Username already exists"
+            });
+        }
+
+        const newUser = new User({
+            username: username.trim(),
+            password, // (plaintext for now — matches your current system)
+            role: role === "admin" ? "admin" : "user"
+        });
+
+        const saved = await newUser.save();
+
+        res.status(201).json({
+            _id: saved._id,
+            username: saved.username,
+            role: saved.role
+        });
+
+    } catch (err) {
+        console.error("Admin create user failed:", err);
+        res.status(500).json({ error: "Create user failed" });
+    }
+});
+
+// ================== ADMIN: UPDATE USER ==================
+app.put("/api/admin/users/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const { username, role } = req.body;
+
+        const updated = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                ...(username && { username: username.trim() }),
+                ...(role && { role })
+            },
+            { new: true }
+        ).select("-password");
+
+        if (!updated) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(updated);
+
+    } catch (err) {
+        console.error("Admin update user failed:", err);
+        res.status(500).json({ error: "Update user failed" });
+    }
+});
+
+// ================== ADMIN: DELETE USER ==================
+app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        // Optional safety: prevent deleting yourself
+        if (req.session.userId === req.params.id) {
+            return res.status(400).json({
+                error: "INVALID_OPERATION",
+                message: "You cannot delete your own account"
+            });
+        }
+
+        const deleted = await User.findByIdAndDelete(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error("Admin delete user failed:", err);
+        res.status(500).json({ error: "Delete user failed" });
+    }
+});
 
 
-// app.post('/api/updateLocation', async (req, res) => {
-//     console.log("Trying to write 10 random venues to db...")
+// 添加 Favorite 相关路由
+app.get('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId)
+            .populate('favorites');
 
-//     try {
-//         for (const loc of req.body.selectedVenues) {
-//             console.log(loc);
-//             const newLocation = new Location({
-//                 namee: loc.venueNameE,
-//                 namec: loc.venueNameC || '',
-//                 latitude: loc.latitude || '',
-//                 longitude: loc.longitude || ''
-//             });
-//             await newLocation.save();
-//         }
+        res.json(user.favorites);
+    } catch (error) {
+        console.error('Error fetching favorites:', error);
+        res.status(500).json({
+            error: 'Failed to fetch favorites'
+        });
+    }
+});
 
-//         res.status(201).send("Successfully updated venues");
+app.post('/api/favorites', checkSession, async (req, res) => {
+    try {
+        const { venueId } = req.body;
 
-//     } catch (error) {
-//         console.error("Error:", error);
-//         res.status(500).send("Failed to update venues");
-//     }
-// });
+        // 查找场地
+        const venue = await Location.findOne({ venueId });
+        if (!venue) {
+            return res.status(404).json({
+                error: 'Venue not found'
+            });
+        }
 
+        const user = await User.findById(req.session.userId);
+
+        // 检查是否已收藏
+        const favoriteIndex = user.favorites.indexOf(venue._id);
+        if (favoriteIndex > -1) {
+            // 取消收藏
+            user.favorites.splice(favoriteIndex, 1);
+            await user.save();
+            return res.json({
+                success: true,
+                message: 'Removed from favorites',
+                isFavorite: false
+            });
+        } else {
+            // 添加收藏
+            user.favorites.push(venue._id);
+            await user.save();
+            return res.json({
+                success: true,
+                message: 'Added to favorites',
+                isFavorite: true
+            });
+        }
+    } catch (error) {
+        console.error('Error updating favorites:', error);
+        res.status(500).json({
+            error: 'Failed to update favorites'
+        });
+    }
+});
+
+app.delete('/api/clearFavorites', checkSession, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // 清空收藏数组
+        user.favorites = [];
+        await user.save();
+
+        console.log(`Cleared favorites for user: ${user.username}`);
+
+        res.json({
+            success: true,
+            message: 'All favorites cleared successfully',
+            favorites: []
+        });
+    } catch (error) {
+        console.error('Error clearing favorites:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear favorites'
+        });
+    }
+});
+
+app.get("/api/locations", async (req, res) => {
+    let venueIds = req.query.venueIds ? req.query.venueIds.split(',') : [];
+    try {
+        const locations = venueIds.length > 0 ? await Location.find({ venueId: { $in: venueIds } }) : await Location.find({});
+        await Promise.all(venueIds.map(async (venueId, index) => {
+            locations[index]._doc.eventCount = await Event.countDocuments({ venueId });
+        }));
+        res.json(locations);
+    } catch (error) {
+        console.error("Error fetching locations:", error);
+        res.status(500).json({ error: "Failed to fetch locations" });
+    }
+});
+
+app.get("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    try {
+        const comments = await Comment.find({
+            location: locationId
+        }).populate({
+            path: 'user',
+            select: 'username -_id'
+        });
+        res.json(comments);
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ error: "Failed to fetch comments" });
+    }
+});
+
+app.post("/api/locations/:locationId/comments", async (req, res) => {
+    const locationId = req.params.locationId;
+    const { comment } = req.body;
+
+    try {
+        const newComment = new Comment({
+            user: req.user.userId,
+            location: locationId,
+            comment: comment,
+        });
+        await newComment.save();
+        res.status(201).json({ success: true, message: "Comment added successfully" });
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        res.status(500).json({ success: false, message: "Failed to add comment" });
+    }
+});
