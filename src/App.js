@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import ChatWindow from './components/ChatWindow';
 import Calendar from './components/CalendarView';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
+import { ThemeContext } from './ThemeContext';
 import AuditLog from "./components/AuditLog";
 
 
@@ -24,6 +25,7 @@ import './App.css';
 function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { isDarkMode, toggleTheme } = useContext(ThemeContext);
 
     async function checkAuth() {
         try {
@@ -62,7 +64,7 @@ function App() {
                     <div className="d-flex align-items-center">
                         <img
                             className="me-2"
-                            src='/icon.png'
+                            src={`/icon-${isDarkMode? "dark" : "light"}.png`}
                             alt='webpage logo'
                             style={{
                                 maxWidth: "40px",
@@ -110,6 +112,7 @@ function App() {
 
                     {/* User info and Logout - Desktop */}
                     <div className="d-flex align-items-center">
+                        <ThemeToggleButton />
                         {!user ? (
                             <Link className="nav-link" to='/login'>Log In</Link>
                         ) : (
@@ -143,7 +146,7 @@ function App() {
                     <div className="d-flex align-items-center">
                         <img
                             className="me-2"
-                            src='/icon.png'
+                            src={`/icon-${isDarkMode? "dark" : "light"}.png`}
                             alt='webpage logo'
                             style={{
                                 maxWidth: "35px",
@@ -152,19 +155,22 @@ function App() {
                         />
                         <span className="fw-bold">Event Manager</span>
                     </div>
-                    {user && (
-                        <span className="text-muted small">
-                            Hi, {user.username.split(' ')[0]}
-                        </span>
-                    )}
+                    <div className="d-flex align-items-center gap-2">
+                        <ThemeToggleButton />
+                        {user && (
+                            <span className="text-muted small">
+                                Hi, {user.username.split(' ')[0]}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Main Content - Adjusted padding for mobile */}
             <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
                 {/* Chat Window (always displayed after login) */}
-                {user && <ChatWindow user={user}/>}
-                
+                {user && <ChatWindow user={user} />}
+
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
@@ -204,12 +210,12 @@ function App() {
 
             {/* Mobile Bottom Navigation */}
             {user ? (
-                <div className="d-lg-none bg-white border-top" style={{ zIndex: 1030 }}>
+                <div className="d-lg-none border-top" style={{ zIndex: 1030, backgroundColor: 'var(--bs-body-bg, #fff)', color: 'var(--bs-body-color, #000)' }}>
                     <div className="container">
                         <div className="row text-center py-2">
 
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/">
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to="/">
                                     <i className="bi bi-house fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.75rem" }}>Home</small>
                                 </Link>
@@ -223,9 +229,16 @@ function App() {
                             </div>
 
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/event">
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/event'>
                                     <i className="bi bi-calendar-event fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.75rem" }}>Events</small>
+                                </Link>
+                            </div>
+
+                            <div className="col">
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/map'>
+                                    <i className="bi bi-map fs-5"></i>
+                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Map</small>
                                 </Link>
                             </div>
 
@@ -237,7 +250,7 @@ function App() {
                             </div>
 
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/favorite">
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/favorite'>
                                     <i className="bi bi-heart fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.75rem" }}>Favorites</small>
                                 </Link>
@@ -245,7 +258,8 @@ function App() {
 
                             <div className="col">
                                 <button
-                                    className="text-decoration-none text-dark d-flex flex-column align-items-center border-0 bg-transparent w-100"
+                                    className="text-decoration-none d-flex flex-column align-items-center border-0 bg-transparent w-100"
+                                    style={{ color: 'inherit' }}
                                     onClick={async () => {
                                         await fetch("/api/logout", {
                                             method: "POST",
@@ -267,21 +281,35 @@ function App() {
 
             {/* Extra Menu for Admin - Additional Bottom Menu */}
             {user && user.role === "admin" && (
-                <div className="d-lg-none bg-light border-top" style={{ zIndex: 1025 }}>
+                <div
+                    className="d-lg-none border-top"
+                    style={{
+                        zIndex: 1025,
+                        backgroundColor: 'var(--bs-body-bg, #f8f9fa)',
+                        color: 'var(--bs-body-color, #000)'
+                    }}
+                >
                     <div className="container">
                         <div className="row text-center py-2">
 
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to="/admin/events">
+                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to='/admin/events'>
                                     <i className="bi bi-tools fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.7rem" }}>Events</small>
                                 </Link>
                             </div>
 
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to="/admin/users">
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'var(--bs-body-color, #000)' }} to='/admin/users'>
                                     <i className="bi bi-people fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.7rem" }}>Users</small>
+                                </Link>
+                            </div>
+
+                            <div className="col">
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/location'>
+                                    <i className="bi bi-geo-alt fs-5"></i>
+                                    <small className="mt-1" style={{ fontSize: '0.7rem' }}>Locations</small>
                                 </Link>
                             </div>
 
@@ -291,12 +319,27 @@ function App() {
                                     <small className="mt-1" style={{ fontSize: "0.7rem" }}>Logs</small>
                                 </Link>
                             </div>
-
                         </div>
                     </div>
                 </div>
             )}
         </div>
+    );
+}
+
+/* ================== THEME TOGGLE BUTTON ================== */
+function ThemeToggleButton() {
+    const { isDarkMode, toggleTheme } = useContext(ThemeContext);
+
+    return (
+        <button
+            className="btn btn-link text-decoration-none nav-link"
+            onClick={toggleTheme}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            style={{ fontSize: '1.2rem' }}
+        >
+            {isDarkMode ? '☀️' : '🌙'}
+        </button>
     );
 }
 

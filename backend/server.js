@@ -363,6 +363,7 @@ app.post('/api/signup', async (req, res) => {
         req.session.userId = newUser._id;
         req.session.username = newUser.username;
         req.session.role = newUser.role;
+        req.session.rememberMe = req.body.rememberMe;
         updateData(req);
 
         res.status(201).json({

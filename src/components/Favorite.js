@@ -247,7 +247,7 @@ function Favorite() {
         </div>
             
             {sortedFavorites.length === 0 ? (
-                <div className="text-center py-4 text-muted">
+                <div id="no-fav-content" className="text-center py-4 text-muted">
                     <i className="bi bi-search display-6"></i>
                     <h5 className="mt-3">
                         {searchQuery ? 'No matching favorites' : 'No favorite venues yet'}
@@ -287,7 +287,7 @@ function Favorite() {
                                             className="btn btn-sm favorite-sort-btn favorite-sort-btn-events"
                                             onClick={() => handleSort('events')}
                                         >
-                                            <span># Events</span>
+                                            <span>Number of Events</span>
                                             <span>{sortConfig.key === 'events' ? 
                                                 (sortConfig.direction === 'asc' ? '↑' : '↓') : 
                                                 '⇅'}</span>
