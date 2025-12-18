@@ -964,6 +964,6 @@ app.post('/api/chatbot', async (req, res) => {
         res.send("No user input");
     }
 
-    const botResponse = await chat(userInput, Location.find({}));
+    const botResponse = await chat(userInput, await Location.find({}));
     res.send(botResponse);
 });

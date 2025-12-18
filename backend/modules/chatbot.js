@@ -28,13 +28,12 @@ Available information:
     try {
 
         if (selectedVenues) {
-            const parsedSelectedVenues = JSON.parse(selectedVenues);
             // console.log("parsedSelectedVenues:", parsedSelectedVenues);
 
             const Event = mongoose.model('Event');
 
             const venueEventData = await Promise.all(
-                parsedSelectedVenues
+                selectedVenues
                     .filter(obj => obj !== null)
                     .slice(0, 3)
                     .map(async (venue) => {
@@ -56,7 +55,7 @@ Available information:
                     })
             );
 
-            console.log(`chatbot.js: Loaded ${parsedSelectedVenues.length} venues from cache`);
+            console.log(`chatbot.js: Loaded ${selectedVenues.length} venues`);
             console.log(`chatbot.js: venueEventData:`, JSON.stringify(venueEventData, null, 2));
 
             // Add to prompt as JSON string
