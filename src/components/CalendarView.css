@@ -55,3 +55,61 @@
     color: #555;
     margin: 12px 0 6px;
 }
+
+.calendar-content:hover {
+    background-color: #f6f9ff !important;
+}
+
+/* Dark mode button styling */
+[data-bs-theme="dark"] .btn-outline-danger {
+    border-color: #ff6b6b !important;
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+    background-color: #ff6b6b !important;
+    color: white !important;
+    border-color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger i {
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover i {
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+    border-color: #8c7aff !important;
+    color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+    background-color: #8c7aff !important;
+    color: white !important;
+    border-color: #8c7aff !important;
+}
+
+/* Dark mode table rows */
+[data-bs-theme="dark"] .calendar-date {
+    background-color: #242932 !important;
+}
+
+[data-bs-theme="dark"] .calendar-content {
+    background-color: #0f0f0f !important;
+}
+
+[data-bs-theme="dark"] .calendar-content:hover {
+    background-color: #3b414c !important;
+}
+
+[data-bs-theme="dark"] .calendar-date,
+[data-bs-theme="dark"] .calendar-content h5,
+[data-bs-theme="dark"] .calendar-content div {
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .calendar-date div {
+    color: white !important;
+}

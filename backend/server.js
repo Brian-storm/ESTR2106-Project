@@ -301,9 +301,10 @@ app.post('/api/signup', async (req, res) => {
 
         await newUser.save();
 
-        req.session.userId = newUser._id;
-        req.session.username = newUser.username;
-        req.session.role = newUser.role;
+        req.session.userId = user._id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+        req.session.rememberMe = req.body.rememberMe;
 
         res.status(201).json({
             success: true,

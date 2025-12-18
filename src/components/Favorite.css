@@ -148,6 +148,16 @@
     border-color: #8c7aff !important;
 }
 
+[data-bs-theme="dark"] #no-fav-content {
+    background-color: #4a5568;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #no-fav-content:hover {
+    background-color: #8c7aff;
+    color: white !important;
+}
+
 /* 5. 排序按钮 - 与 Home.js 完全相同的样式 */
 .favorite-sort-btn {
     background: rgba(255, 255, 255, 0.15) !important;

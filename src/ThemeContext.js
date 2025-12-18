@@ -20,7 +20,7 @@ export function ThemeProvider({ children }) {
 
     useEffect(() => {
         localStorage.setItem('theme-mode', isDarkMode ? 'dark' : 'light');
-        
+
         // Apply theme to document
         if (isDarkMode) {
             document.documentElement.setAttribute('data-bs-theme', 'dark');

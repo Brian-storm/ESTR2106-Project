@@ -25,6 +25,7 @@ import './App.css';
 function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { isDarkMode, toggleTheme } = useContext(ThemeContext);
 
     async function checkAuth() {
         try {
@@ -63,7 +64,7 @@ function App() {
                     <div className="d-flex align-items-center">
                         <img
                             className="me-2"
-                            src='/icon.png'
+                            src={`/icon-${isDarkMode? "dark" : "light"}.png`}
                             alt='webpage logo'
                             style={{
                                 maxWidth: "40px",
@@ -145,7 +146,7 @@ function App() {
                     <div className="d-flex align-items-center">
                         <img
                             className="me-2"
-                            src='/icon.png'
+                            src={`/icon-${isDarkMode? "dark" : "light"}.png`}
                             alt='webpage logo'
                             style={{
                                 maxWidth: "35px",
@@ -231,13 +232,6 @@ function App() {
                                 <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/event'>
                                     <i className="bi bi-calendar-event fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.75rem" }}>Events</small>
-                                </Link>
-                            </div>
-
-                            <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/calendar">
-                                    <i className="bi bi-calendar3 fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Calendar</small>
                                 </Link>
                             </div>
 

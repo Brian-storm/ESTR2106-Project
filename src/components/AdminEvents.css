@@ -261,26 +261,32 @@
 
 /* 9. Form controls */
 .form-control, .form-select {
-    border: 1px solid #ddd !important;
-    background-color: white !important;
+    border: 1px solid #ddd;
+    background-color: white;
     color: #333 !important;
 }
 
 .form-control:focus, .form-select:focus {
     border-color: #6c63ff !important;
-    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.15) !important;
+    box-shadow: 0 0 0 0.2rem rgba(170, 168, 202, 0.15) !important;
 }
 
-[data-bs-theme="dark"] .form-control,
-[data-bs-theme="dark"] .form-select {
+[data-bs-theme="dark"] #modify-event {
     background-color: #4a5568 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-event .form-control,
+[data-bs-theme="dark"] #modify-event .form-select {
+    background-color: #66748d !important;
     border-color: #5a6578 !important;
     color: white !important;
 }
 
-[data-bs-theme="dark"] .form-control:focus,
-[data-bs-theme="dark"] .form-select:focus {
-    background-color: #4a5568 !important;
+[data-bs-theme="dark"] #modify-event .form-control:focus,
+[data-bs-theme="dark"] #modify-event .form-select:focus {
+    background-color: #7788a5 !important;
     border-color: #8c7aff !important;
     color: white !important;
 }

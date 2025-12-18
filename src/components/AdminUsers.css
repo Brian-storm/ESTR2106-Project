@@ -73,6 +73,26 @@
     color: white !important;
 }
 
+[data-bs-theme="dark"] #modify-user {
+    background-color: #4a5568 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-user .form-control,
+[data-bs-theme="dark"] #modify-user .form-select {
+    background-color: #66748d !important;
+    border-color: #5a6578 !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-user .form-control:focus,
+[data-bs-theme="dark"] #modify-user .form-select:focus {
+    background-color: #7788a5 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
 /* 5. Button styling - Light mode */
 .btn {
     border-radius: 8px;

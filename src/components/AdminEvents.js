@@ -42,7 +42,7 @@ function AdminEvents({ user }) {
 
     const pageCache = useRef({});
     const pageTopRef = useRef(null);
-    
+
 
     const emptyForm = {
         title: "",
@@ -216,30 +216,6 @@ function AdminEvents({ user }) {
                 </button>
             </div>
 
-            {/* pagination - TOP */}
-            <div ref={pageTopRef} className="d-flex justify-content-center mt-3 mb-3">
-                <button
-                    className="btn btn-outline-secondary btn-sm me-2"
-                    disabled={page === 1}
-                    onClick={() => {
-                        setPage(p => p - 1);
-                        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                >
-                    Prev
-                </button>
-                <span className="align-self-center pagination-text">
-                    Page {page} / {totalPages}
-                </span>
-                <button
-                    className="btn btn-outline-secondary btn-sm ms-2"
-                    disabled={page === totalPages}
-                    onClick={() => setPage(p => p + 1)}
-                >
-                    Next
-                </button>
-            </div>
-
             {/* table */}
             <div className="table-responsive">
                 <table className="table table-bordered table-sm w-100">
@@ -254,63 +230,44 @@ function AdminEvents({ user }) {
                             <th style={{ width: "10%" }}>Actions</th>
                         </tr>
                     </thead>
-                        <tbody>
-                            {events.map(ev => (
-                                <tr key={ev._id}>
-                                    <td style={cellStyle}>{ev.title}</td>
-                                    <td style={cellStyle}>{ev.venue}</td>
+                    <tbody>
+                        {events.map(ev => (
+                            <tr key={ev._id}>
+                                <td style={cellStyle}>{ev.title}</td>
+                                <td style={cellStyle}>{ev.venue}</td>
 
-                                    <td style={cellStyle}>{ev.date}</td>
-                                    <td style={cellStyle}>{ev.time}</td>
+                                <td style={cellStyle}>{ev.date}</td>
+                                <td style={cellStyle}>{ev.time}</td>
 
-                                    <td style={cellStyle}>{ev.presenter}</td>
-                                    <td style={cellStyle}>{ev.desc}</td>
+                                <td style={cellStyle}>{ev.presenter}</td>
+                                <td style={cellStyle}>{ev.desc}</td>
 
-                                    <td
-                                        className="text-center"
-                                        style={{ verticalAlign: "top", whiteSpace: "nowrap" }}
+                                <td
+                                    className="text-center"
+                                    style={{ verticalAlign: "top", whiteSpace: "nowrap" }}
+                                >
+                                    <button
+                                        className="btn btn-primary btn-sm me-1"
+                                        onClick={() => startEdit(ev)}
                                     >
-                                        <button
-                                            className="btn btn-primary btn-sm me-1"
-                                            onClick={() => startEdit(ev)}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() => deleteEvent(ev._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                                        Edit
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => deleteEvent(ev._id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             </div>
 
-            {/* pagination */}
-            <div className="d-flex justify-content-center mt-3">
-                <button
-                    className="btn btn-outline-secondary btn-sm me-2"
-                    disabled={page === 1}
-                    onClick={() => setPage(p => p - 1)}
-                >
-                    Prev
-                </button>
-                <span className="align-self-center">
-                    Page {page} / {totalPages}
-                </span>
-                <button
-                    className="btn btn-outline-secondary btn-sm ms-2"
-                    disabled={page === totalPages}
-                    onClick={() => setPage(p => p + 1)}
-                >
-                    Next
-                </button>
+            <div className="mt-3 mb-5">
+                <Pagination page={page} totalPages={totalPages} setPage={setPage} />
             </div>
-
-            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
 
             {/* ================== ADD / EDIT MODAL ================== */}
             {(showAddModal || editingId) && (
@@ -325,7 +282,7 @@ function AdminEvents({ user }) {
                         zIndex: 1050
                     }}
                 >
-                    <div style={{ background: "#fff", padding: 20, width: "100%", maxWidth: 600 }}>
+                    <div id="modify-event" style={{ background: "#fff", padding: 20, width: "100%", maxWidth: 600 }}>
                         <h5>{editingId ? "Edit Event" : "Add Event"}</h5>
 
                         {Object.keys(emptyForm).map(k => (

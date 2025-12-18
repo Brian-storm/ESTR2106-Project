@@ -305,7 +305,7 @@ function AdminUsers({ user }) {
                     justifyContent: "center",
                     alignItems: "center"
                 }}>
-                    <div style={{ background: "#fff", padding: 20, maxWidth: 400, width: "100%" }}>
+                    <div id="modify-user" style={{ background: "#fff", padding: 20, maxWidth: 400, width: "100%" }}>
                         <h5>Add New User</h5>
 
                         <input
