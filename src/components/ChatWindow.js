@@ -46,7 +46,6 @@ function ChatWindow(props) {
         setMessages(prev => [...prev, userMessage]);
         setInputText('');
         setIsTyping(true);
-        const selectedVenues = localStorage.getItem('selectedVenues');
 
         // AI response via server
         try{
@@ -57,7 +56,6 @@ function ChatWindow(props) {
                 },
                 body: JSON.stringify({
                     userInput: inputText,
-                    selectedVenues: selectedVenues,
                 })
             });
 

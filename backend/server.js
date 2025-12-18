@@ -959,12 +959,11 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
 const { chat } = require('./modules/chatbot');
 app.post('/api/chatbot', async (req, res) => {
     const userInput = req.body.userInput;
-    const selectedVenues = req.body.selectedVenues;
 
     if (!userInput) {
         res.send("No user input");
     }
 
-    const botResponse = await chat(userInput, selectedVenues);
+    const botResponse = await chat(userInput, Location.find({}));
     res.send(botResponse);
 });

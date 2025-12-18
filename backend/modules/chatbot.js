@@ -41,7 +41,7 @@ Available information:
                         const venueInfo = `name: ${venue.name}\n`
 
                         const events = await Event.find({ venueId: venue.venueId })
-                        eventInfo = events.map(event => {
+                        const eventInfo = events.map(event => {
                             return (
                                 `title: ${event.title || 'Untitled Event'}\n` +
                                 `date: ${event.date || 'Date not specified'}\n` +
