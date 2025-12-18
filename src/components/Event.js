@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { calculateDistance, formatDistance } from "../utils";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const TableColumnHeader = ({ label, sortKey, handleSort, sortConfig }) => {
   return (
@@ -32,6 +33,9 @@ const Event = () => {
   const [dataFetchTime, setDataFetchTime] = useState(null);
   const [sortedFilteredEvents, setSortedFilteredEvents] = useState([]);
 
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
@@ -44,25 +48,6 @@ const Event = () => {
   const handleClearDistance = () => setMaxDistance(50);
 
   useEffect(() => {
-    const saved = localStorage.getItem("venues");
-    if (!saved) {
-      console.log("No cached venues found, showing empty state");
-      return;
-    }
-
-    const venueIds = JSON.parse(saved);
-
-    fetch("/api/events?venueIds=" + venueIds.join(","))
-      .then((response) => response.json())
-      .then((data) => {
-        const fetchTime = new Date();
-        setDataFetchTime(fetchTime);
-        setEvents(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching events:", error);
-      });
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -79,6 +64,32 @@ const Event = () => {
       setUserLocation({ latitude: 22.3193, longitude: 114.1694 });
     }
   }, []);
+
+  useEffect(() => {
+    let venueIds = [];
+    if (!searchParams.get("venueIds")) {
+      const saved = localStorage.getItem("venues");
+      if (!saved) {
+        console.log("No cached venues found, showing empty state");
+        return;
+      }
+
+      venueIds = JSON.parse(saved);
+    } else {
+      venueIds = searchParams.get("venueIds").split(",");
+    }
+
+    fetch("/api/events?venueIds=" + venueIds.join(","))
+      .then((response) => response.json())
+      .then((data) => {
+        const fetchTime = new Date();
+        setDataFetchTime(fetchTime);
+        setEvents(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching events:", error);
+      });
+  }, [searchParams]);
 
   useEffect(() => {
     let filtered = [...events];
@@ -148,6 +159,23 @@ const Event = () => {
 
   return (
     <div className="container-lg mt-4">
+      {searchParams.get("venueIds") !== null && events.length > 0 && (
+        <div className="mb-4 d-flex align-items-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="link-secondary link-opacity-100-hover link-underline-opacity-0"
+            style={{
+              all: "unset",
+              cursor: "pointer",
+            }}
+          >
+            <i className="bi bi-chevron-left"></i> Go Back
+          </button>
+          <h2 className="flex-grow-1 text-center">
+            Events for {events[0].venue?.name}
+          </h2>
+        </div>
+      )}
       <div className="mb-4">
         <div className="row">
           <div className="col-4">
