@@ -367,7 +367,7 @@ const Event = () => {
 
         {/* 没有搜索结果时显示 */}
         {sortedFilteredEvents.length === 0 && (
-          <div className="text-center py-4 text-muted">
+          <div className="no-result text-center py-4 text-muted">
             <i className="bi bi-search display-6"></i>
             <h5 className="mt-3">No venues found</h5>
             <div className="mt-3">

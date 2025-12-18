@@ -1,3 +1,49 @@
 :root {
   --side-panel-width: min(100vw, 450px);
 }
+
+
+/* Dark mode button styling */
+[data-bs-theme="dark"] .btn-outline-danger {
+  border-color: #ff6b6b !important;
+  color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+  background-color: #ff6b6b !important;
+  color: white !important;
+  border-color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger i {
+  color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover i {
+  color: white !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  border-color: #8c7aff !important;
+  color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: #8c7aff !important;
+  color: white !important;
+  border-color: #8c7aff !important;
+}
+
+/* Dark mode table rows */
+[data-bs-theme="dark"] #side_panel {
+  background-color: #1f232b !important;
+  
+}
+
+[data-bs-theme="dark"] #side_panel .comment-message:hover {
+  background-color: #5a6578 !important;
+}
+
+[data-bs-theme="dark"] .table tbody td {
+  color: white !important;
+}

@@ -85,7 +85,7 @@ function Map() {
       />
 
       {/* Side Panel */}
-      <div
+      <div id="side_panel"
         className="position-absolute top-0 bottom-0 bg-white shadow overflow-y-auto p-3"
         style={{
           left: isPanelOpen ? 0 : "calc(var(--side-panel-width) * -1)",
@@ -142,7 +142,7 @@ function Map() {
                 currentVenueComments.map((comment, index) => (
                   <div
                     key={index}
-                    className="text-start mb-2 p-2 border-bottom w-100"
+                    className="comment-message text-start mb-2 p-2 border-bottom w-100"
                   >
                     <div>
                       {comment.user.username} at{" "}
