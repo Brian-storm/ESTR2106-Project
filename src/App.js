@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 
@@ -12,6 +12,7 @@ import Login from './components/Login';
 import View from './components/View';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
+import { ThemeContext } from './ThemeContext';
 
 import './App.css';
 
@@ -100,6 +101,7 @@ function App() {
 
                     {/* User info and Logout - Desktop */}
                     <div className="d-flex align-items-center">
+                        <ThemeToggleButton />
                         {!user ? (
                             <Link className="nav-link" to='/login'>Log In</Link>
                         ) : (
@@ -142,11 +144,14 @@ function App() {
                         />
                         <span className="fw-bold">Event Manager</span>
                     </div>
-                    {user && (
-                        <span className="text-muted small">
-                            Hi, {user.username.split(' ')[0]}
-                        </span>
-                    )}
+                    <div className="d-flex align-items-center gap-2">
+                        <ThemeToggleButton />
+                        {user && (
+                            <span className="text-muted small">
+                                Hi, {user.username.split(' ')[0]}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -269,6 +274,22 @@ function App() {
                 </div>
             )}
         </div>
+    );
+}
+
+/* ================== THEME TOGGLE BUTTON ================== */
+function ThemeToggleButton() {
+    const { isDarkMode, toggleTheme } = useContext(ThemeContext);
+
+    return (
+        <button
+            className="btn btn-link text-decoration-none nav-link"
+            onClick={toggleTheme}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            style={{ fontSize: '1.2rem' }}
+        >
+            {isDarkMode ? '☀️' : '🌙'}
+        </button>
     );
 }
 
