@@ -72,8 +72,8 @@ function Favorite() {
                 aVal = a?.name?.toLowerCase() || '';
                 bVal = b?.name?.toLowerCase() || '';
             } else if (sortConfig.key === 'events') {
-                aVal = a?.eventsCount || a?.events?.length || 0;
-                bVal = b?.eventsCount || b?.events?.length || 0;
+                aVal = a?.eventCount || a?.events?.length || 0;
+                bVal = b?.eventCount || b?.events?.length || 0;
             }
             
             if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -300,7 +300,7 @@ function Favorite() {
                                 {currentItems.map((fav, index) => {
                                     const venueId = fav?.venueId || fav?._id || `fav-${index}`;
                                     const name = fav?.name || 'Unknown Venue';
-                                    const eventsCount = fav?.eventsCount || fav?.events?.length || 0;
+                                    const eventCount = fav?.eventCount || fav?.events?.length || 0;
                                     const globalIndex = indexOfFirstItem + index;
                                     
                                     return (
@@ -316,7 +316,7 @@ function Favorite() {
                                                 </div>
                                             </td>
                                             <td className="text-center">
-                                                <span>{eventsCount}</span>
+                                                <span>{eventCount}</span>
                                             </td>
                                             <td className="text-center">
                                                 <div className="d-flex gap-2 justify-content-center">

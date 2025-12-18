@@ -746,10 +746,31 @@ app.get("/api/events", async (req, res) => {
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {
     try {
-        const user = await User.findById(req.session.userId)
-            .populate('favorites');
+        const user = await User.findById(req.session.userId).select('favorites');
 
-        res.json(user.favorites);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!user.favorites || user.favorites.length === 0) {
+            return res.json([]);
+        }
+
+        const favoritesWithCounts = await Location.aggregate([
+            { $match: { _id: { $in: user.favorites } } },
+            {
+                $lookup: {
+                    from: 'events',
+                    localField: '_id',
+                    foreignField: 'venue',
+                    as: 'events'
+                }
+            },
+            { $addFields: { eventCount: { $size: '$events' } } },
+            { $project: { events: 0 } }
+        ]);
+
+        res.json(favoritesWithCounts);
     } catch (error) {
         console.error('Error fetching favorites:', error);
         res.status(500).json({
