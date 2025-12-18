@@ -254,7 +254,7 @@ const initData = async () => {
     console.log("Finish initializing data.");
 }
 
-const updateData = async (req, res, next) => {
+const updateData = async (req) => {
     const venueIds = await Location.find({}).select("venueId _id");
     const venueIdMapping = {};
     venueIds.forEach(venue => {
@@ -301,8 +301,6 @@ const updateData = async (req, res, next) => {
     await db
       .collection("events")
       .bulkWrite(bulkWriteEventData, { ordered: false });
-
-    next();
 }
 
 // Routes
@@ -365,6 +363,7 @@ app.post('/api/signup', async (req, res) => {
         req.session.userId = newUser._id;
         req.session.username = newUser.username;
         req.session.role = newUser.role;
+        updateData(req);
 
         res.status(201).json({
             success: true,
@@ -415,6 +414,7 @@ app.post('/api/login', async (req, res) => {
         req.session.rememberMe = req.body.rememberMe;
 
         console.log('Session created successfully for user:', username);
+        updateData(req);
 
         res.status(200).json({
             success: true,
@@ -457,18 +457,6 @@ app.post('/api/logout', (req, res) => {
         });
     });
 });
-
-
-
-// CRUD on data - Events and Locations
-// Fetch data
-app.get('/api/fetchEvents', updateData, async (req, res) => {
-    console.log("Returning venue event pairs...");
-
-    res.setHeader('Content-Type', 'application/json');
-    const locations = await Location.find({});
-    res.json(locations);
-})
 
 // ================== USER: CALENDAR EVENTS ==================
 app.get("/api/calendar/events", async (req, res) => {

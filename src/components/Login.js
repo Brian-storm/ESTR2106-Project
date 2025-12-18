@@ -84,8 +84,6 @@ function Login(props) {
     const fetchAndSaveVenuesData = async () => {
         try {
             console.log("Fetching venues data after login...");
-            await fetch("/api/fetchEvents");
-            // console.log("Received venues data:", data.length, "items");
         } catch (error) {
             console.error('Error fetching venues data:', error);
         }
