@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'; // 导入路由相关
 import './Home.css';
 
 function Home() {
-    const [selectedVenues, setSelectedVenues] = useState([]);
+    const [venues, setVenues] = useState([]);
     const [favorites, setFavorites] = useState(new Set());
     const [userLocation, setUserLocation] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -24,13 +24,20 @@ function Home() {
 
     // 缺少的数据加载 useEffect
     useEffect(() => {
-        const saved = localStorage.getItem('selectedVenues');
+        const saved = localStorage.getItem('venues');
         
         if (saved) {
-            // 有缓存数据，直接使用
-            const data = JSON.parse(saved);
-            setSelectedVenues(data);
-            console.log(`Loaded ${data.length} venues from cache`);
+            const venueIds = JSON.parse(saved);
+            console.log(`Loaded ${venueIds.length} venues from cache`);
+
+            fetch("/api/locations?venueIds=" + venueIds.join(','))
+                .then(response => response.json())
+                .then(data => {
+                    setVenues(data);
+                    console.log("Fetched venues data from server based on cached IDs");
+                }).catch((error) => {
+                    console.error("Error fetching locations:", error);
+                });
         } else {
             // 没有数据（第一次访问或缓存被清除了）
             console.log("No cached venues found, showing empty state");
@@ -131,20 +138,20 @@ function Home() {
 
     const getSortedAndFilteredVenues = () => {
         // 1. 先过滤
-        let venues = filterVenues(selectedVenues);
+        let filteredVenues = filterVenues(venues);
         
         // 2. 再排序
-        if (!sortConfig.key) return venues;
+        if (!sortConfig.key) return filteredVenues;
         
-        return [...venues].sort((a, b) => {
+        return [...filteredVenues].sort((a, b) => {
             let aVal, bVal;
             
             if (sortConfig.key === 'distance') {
                 aVal = calculateDistance(a) || Infinity;
                 bVal = calculateDistance(b) || Infinity;
             } else if (sortConfig.key === 'events') {
-                aVal = a.eventsCount || 0;
-                bVal = b.eventsCount || 0;
+                aVal = a.eventCount || 0;
+                bVal = b.eventCount || 0;
             } else {
                 aVal = a[sortConfig.key] || '';
                 bVal = b[sortConfig.key] || '';
@@ -235,7 +242,7 @@ function Home() {
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container-lg mt-4">
             {/* 搜索栏和距离筛选 */}
             <div className="mb-4">
                 <div className="row">
@@ -351,7 +358,7 @@ function Home() {
             </div>
             
             <div className="table-responsive">
-                <table className="table table-striped table-hover">
+                <table className="table table-striped table-hover m-0">
                     <thead className="table-header-clean">
                         <tr>
                             <th scope="col" className="text-center-cell">Venue ID</th>
@@ -425,7 +432,7 @@ function Home() {
                                         <span> {formatDistance(distance)} </span>
                                     </td>
                                     <td>
-                                        <span> {venue.eventsCount || 0} </span>
+                                        <span> {venue.eventCount || 0} </span>
                                     </td>
                                     <td className="text-center align-middle">
                                         <div className="d-flex justify-content-center align-items-center">
@@ -478,24 +485,18 @@ function Home() {
                     </div>
                 )}
             </div>
-            <div className="update-info mt-4">
-                <div className="d-flex justify-content-center align-items-center">
-                    <div className="text-center">
-                        <div className="text-muted small">
-                            Last updated time : {dataFetchTime ? 
-                                dataFetchTime.toLocaleString([], { 
-                                    weekday: 'short',
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }) : 
-                                'Loading...'
-                            }
-                        </div>
-                    </div>
-                </div>
+            <div className="d-flex justify-content-center align-items-center text-center text-muted small p-4">
+                Last updated time : {dataFetchTime ? 
+                    dataFetchTime.toLocaleString([], { 
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 
+                    'Loading...'
+                }
             </div>
         </div>
     );
