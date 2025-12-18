@@ -84,29 +84,10 @@ function Login(props) {
     const fetchAndSaveVenuesData = async () => {
         try {
             console.log("Fetching venues data after login...");
-            const response = await fetch("/api/fetchEvents");
-            const data = await response.json();
+            await fetch("/api/fetchEvents");
             // console.log("Received venues data:", data.length, "items");
-            
-            if (data.length > 0) {
-                // 随机选择10个
-                const shuffled = [...data];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                const selected = shuffled.slice(0, 10);
-                
-                // 保存到 localStorage
-                localStorage.setItem('venues', JSON.stringify(selected.map(venue => venue.venueId)));
-                console.log("Saved venues to localStorage");
-            } else {
-                console.warn("No suitable venues found");
-                localStorage.removeItem('venues');
-            }
         } catch (error) {
             console.error('Error fetching venues data:', error);
-            localStorage.removeItem('venues');
         }
     };
 

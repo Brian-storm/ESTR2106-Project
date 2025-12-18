@@ -24,24 +24,14 @@ function Home() {
 
     // 缺少的数据加载 useEffect
     useEffect(() => {
-        const saved = localStorage.getItem('venues');
-        
-        if (saved) {
-            const venueIds = JSON.parse(saved);
-            console.log(`Loaded ${venueIds.length} venues from cache`);
-
-            fetch("/api/locations?venueIds=" + venueIds.join(','))
-                .then(response => response.json())
-                .then(data => {
-                    setVenues(data);
-                    console.log("Fetched venues data from server based on cached IDs");
-                }).catch((error) => {
-                    console.error("Error fetching locations:", error);
-                });
-        } else {
-            // 没有数据（第一次访问或缓存被清除了）
-            console.log("No cached venues found, showing empty state");
-        }
+        fetch("/api/locations")
+            .then(response => response.json())
+            .then(data => {
+                setVenues(data);
+                console.log("Fetched venues data from server based on cached IDs");
+            }).catch((error) => {
+                console.error("Error fetching locations:", error);
+            });
     }, []);
     
     useEffect(() => {
