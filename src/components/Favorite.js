@@ -287,7 +287,7 @@ function Favorite() {
                                             className="btn btn-sm favorite-sort-btn favorite-sort-btn-events"
                                             onClick={() => handleSort('events')}
                                         >
-                                            <span># Events</span>
+                                            <span>Number of Events</span>
                                             <span>{sortConfig.key === 'events' ? 
                                                 (sortConfig.direction === 'asc' ? '↑' : '↓') : 
                                                 '⇅'}</span>
