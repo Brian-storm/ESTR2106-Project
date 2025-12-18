@@ -227,6 +227,12 @@ app.post('/api/signup', async (req, res) => {
             });
         }
 
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
         const passwordHash = await argon2.hash(password);
 
         // Create new user
@@ -278,7 +284,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Check for password
-        if (await argon2.verify(user.password, password) === false) {
+        if (!(await argon2.verify(user.password, password))) {
             return res.status(401).json({
                 success: false,
                 message: 'Wrong password'
