@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
+const argon2 = require('@node-rs/argon2');
 const { Event, Location, User, Comment } = require('./modules/models');
 const { isPointInPolygon } = require("./utils");
 
@@ -226,14 +227,20 @@ app.post('/api/signup', async (req, res) => {
             });
         }
 
+        const passwordHash = await argon2.hash(password);
+
         // Create new user
         const newUser = new User({
             username: username,
-            password: password,
+            password: passwordHash,
             role: 'user'
         });
 
         await newUser.save();
+
+        req.session.userId = newUser._id;
+        req.session.username = newUser.username;
+        req.session.role = newUser.role;
 
         res.status(201).json({
             success: true,
@@ -271,7 +278,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Check for password
-        if (user.password !== password) {
+        if (await argon2.verify(user.password, password) === false) {
             return res.status(401).json({
                 success: false,
                 message: 'Wrong password'
