@@ -27,12 +27,11 @@ if (development) {
 app.use(express.json());
 app.use(cookieParser());
 
-const districtBoundaries = [];
 
 const fetchDistrictBoundaries = async () => {
     const res = await fetch("https://www.had.gov.hk/psi/hong-kong-administrative-boundaries/hksar_18_district_boundary.json");
     const data = await res.json();
-    districtBoundaries.push(...data.features);
+    return data.features;
 }
 
 // ================== AUDIT LOG MODEL ==================
@@ -73,6 +72,7 @@ const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
 db.once('open', async function () {
     console.log("Connection is open...");
     await fetchDistrictBoundaries();
+    await initData();
     const server = app.listen(PORT);
 })
 
@@ -148,7 +148,7 @@ const MatchDistrict = (venuee) => {
     return null;
 }
 
-const fetchDistrict = async (lat, lon) => {
+const fetchDistrict = async (lat, lon, districtBoundaries) => {
     for (let boundary of districtBoundaries) {
         const polygon = boundary.geometry.coordinates[0].map(coord => [coord[0], coord[1]]);
         if (isPointInPolygon(polygon, [lon, lat])) {
@@ -157,7 +157,13 @@ const fetchDistrict = async (lat, lon) => {
     }
 };
 
-const updateData = async (req, res, next) => {
+const initData = async () => {
+    const districtBoundaries = await fetchDistrictBoundaries();
+    const existingLocations = await Location.countDocuments();
+    if (existingLocations > 0) {
+        console.log("Locations already initialized.");
+        return;
+    }
     const venueUrl = "https://www.lcsd.gov.hk/datagovhk/event/venues.xml";
     const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
 
@@ -178,24 +184,26 @@ const updateData = async (req, res, next) => {
 
     console.log("Parsing venue data...");
     const venueText = await venueResponse.text();
-    const venueData = parser.parse(venueText);
-    req.venueData = venueData.venues?.venue || [];
+    let venueData = parser.parse(venueText).venues?.venue.filter((venue) => (
+        venue["@_id"] && venue.latitude && venue.longitude
+    ));
 
     console.log("Parsing event data...");
     const eventText = await eventResponse.text();
-    const eventData = parser.parse(eventText);
-    req.eventData = eventData.events?.event || [];
+    let eventData = parser.parse(eventText).events?.event;
 
-    req.venueData = req.venueData.filter((venue) => {
-        return req.eventData.some(
-            (event) => event.venueid?.toString() === venue["@_id"]
-        );
-    });
+    venueData = venueData.filter((venue) => {
+        return eventData.filter(event => event.venueid.toString() === venue["@_id"]).length >= 3;
+    }).sort(() => Math.random() - 0.5).slice(0, 10);
+
+    const haveCoordsVenuesSet = new Set(
+        venueData.map(venue => venue["@_id"])
+    );
 
     const venueIdMapping = {};
 
     await Promise.all(
-        req.venueData.map(async (venue) => {
+        venueData.map(async (venue) => {
             let location = await Location.findOne({ venueId: venue["@_id"] });
             if (!location)
                 location = new Location({
@@ -210,7 +218,7 @@ const updateData = async (req, res, next) => {
                 if (location && location.district) {
                     districtName = location.district;
                 } else {
-                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude, districtBoundaries);
                 }
             }
             location.district = districtName;
@@ -219,29 +227,80 @@ const updateData = async (req, res, next) => {
         })
     );
 
-    const bulkWriteEventData = req.eventData.map((event) => ({
-        updateOne: {
-            filter: { eventId: event["@_id"] },
-            update: {
-                $set: {
-                    title: event.titlee || "Untitled",
-                    venue: venueIdMapping[event.venueid],
-                    date: event.predateE || "TBA",
-                    time: event.progtimee || "TBA",
-                    desc: event.desce || "",
-                    presenter: event.presenterorge || "TBA",
-                    eventId: event["@_id"],
+    const bulkWriteEventData = eventData
+        .filter(event => event["@_id"] && haveCoordsVenuesSet.has(event.venueid.toString()))
+        .map((event) => ({
+            updateOne: {
+                filter: { eventId: event["@_id"] },
+                update: {
+                    $set: {
+                        title: event.titlee || "Untitled",
+                        venue: venueIdMapping[event.venueid.toString()],
+                        date: event.predateE || "TBA",
+                        time: event.progtimee || "TBA",
+                        desc: event.desce || "",
+                        presenter: event.presenterorge || "TBA",
+                        eventId: event["@_id"],
+                    },
                 },
+                upsert: true,
             },
-            upsert: true,
-        },
-    }));
+        }));
+
+    await db
+        .collection("events")
+        .bulkWrite(bulkWriteEventData, { ordered: false });
+
+    console.log("Finish initializing data.");
+}
+
+const updateData = async (req) => {
+    const venueIds = await Location.find({}).select("venueId _id");
+    const venueIdMapping = {};
+    venueIds.forEach(venue => {
+        venueIdMapping[venue.venueId] = venue._id;
+    });
+    const eventUrl = "https://www.lcsd.gov.hk/datagovhk/event/events.xml";
+
+    const eventResponse = await fetch(eventUrl);
+    if (!eventResponse.ok) {
+        throw new Error(`HTTP error! status: ${eventResponse.status}`);
+    }
+    console.log("Successfully fetched data");
+
+    const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: "@_"
+    });
+
+    console.log("Parsing event data...");
+    const eventText = await eventResponse.text();
+    const eventData = parser.parse(eventText);
+    req.eventData = eventData.events?.event || [];
+
+    const bulkWriteEventData = req.eventData
+        .filter(event => event["@_id"] && venueIdMapping.hasOwnProperty(event.venueid.toString()))
+        .map((event) => ({
+            updateOne: {
+                filter: { eventId: event["@_id"] },
+                update: {
+                    $set: {
+                        title: event.titlee || "Untitled",
+                        venue: venueIdMapping[event.venueid],
+                        date: event.predateE || "TBA",
+                        time: event.progtimee || "TBA",
+                        desc: event.desce || "",
+                        presenter: event.presenterorge || "TBA",
+                        eventId: event["@_id"],
+                    },
+                },
+                upsert: true,
+            },
+        }));
 
     await db
       .collection("events")
       .bulkWrite(bulkWriteEventData, { ordered: false });
-
-    next();
 }
 
 // Routes
@@ -301,10 +360,11 @@ app.post('/api/signup', async (req, res) => {
 
         await newUser.save();
 
-        req.session.userId = user._id;
-        req.session.username = user.username;
-        req.session.role = user.role;
+        req.session.userId = newUser._id;
+        req.session.username = newUser.username;
+        req.session.role = newUser.role;
         req.session.rememberMe = req.body.rememberMe;
+        updateData(req);
 
         res.status(201).json({
             success: true,
@@ -355,6 +415,7 @@ app.post('/api/login', async (req, res) => {
         req.session.rememberMe = req.body.rememberMe;
 
         console.log('Session created successfully for user:', username);
+        updateData(req);
 
         res.status(200).json({
             success: true,
@@ -397,18 +458,6 @@ app.post('/api/logout', (req, res) => {
         });
     });
 });
-
-
-
-// CRUD on data - Events and Locations
-// Fetch data
-app.get('/api/fetchEvents', updateData, async (req, res) => {
-    console.log("Returning venue event pairs...");
-
-    res.setHeader('Content-Type', 'application/json');
-    const locations = await Location.find({});
-    res.json(locations);
-})
 
 // ================== USER: CALENDAR EVENTS ==================
 app.get("/api/calendar/events", async (req, res) => {
@@ -899,12 +948,11 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
 const { chat } = require('./modules/chatbot');
 app.post('/api/chatbot', async (req, res) => {
     const userInput = req.body.userInput;
-    const selectedVenues = req.body.selectedVenues;
 
     if (!userInput) {
         res.send("No user input");
     }
 
-    const botResponse = await chat(userInput, selectedVenues);
+    const botResponse = await chat(userInput, await Location.find({}));
     res.send(botResponse);
 });

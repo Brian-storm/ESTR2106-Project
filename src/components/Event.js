@@ -67,19 +67,16 @@ const Event = () => {
 
   useEffect(() => {
     let venueIds = [];
-    if (!searchParams.get("venueIds")) {
-      const saved = localStorage.getItem("venues");
-      if (!saved) {
-        console.log("No cached venues found, showing empty state");
-        return;
-      }
-
-      venueIds = JSON.parse(saved);
-    } else {
+    if (searchParams.get("venueIds")) {
       venueIds = searchParams.get("venueIds").split(",");
     }
 
-    fetch("/api/events?venueIds=" + venueIds.join(","))
+    const url =
+      venueIds.length > 0
+        ? "/api/events?venueIds=" + venueIds.join(",")
+        : "/api/events";
+
+    fetch(url)
       .then((response) => response.json())
       .then((data) => {
         const fetchTime = new Date();
