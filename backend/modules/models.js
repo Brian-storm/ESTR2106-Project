@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 // Model 1: Event
 const EventSchema = mongoose.Schema({
     title: { type: String, required: true },
-    venueId: { type: String, required: true },
+    venue: { type: mongoose.Schema.Types.ObjectId, ref: "Location" },
     date: { type: String, required: true },
     time: { type: String, required: true },
     desc: { type: String },

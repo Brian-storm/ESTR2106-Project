@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
+const argon2 = require('@node-rs/argon2');
 const { Event, Location, User, Comment } = require('./modules/models');
 const { isPointInPolygon } = require("./utils");
 
@@ -134,54 +135,63 @@ const updateData = async (req, res, next) => {
     const eventData = parser.parse(eventText);
     req.eventData = eventData.events?.event || [];
 
-    const bulkWriteEventData = req.eventData.map(event => ({
+    req.venueData = req.venueData.filter((venue) => {
+        return req.eventData.some(
+            (event) => event.venueid?.toString() === venue["@_id"]
+        );
+    });
+
+    const venueIdMapping = {};
+
+    await Promise.all(
+        req.venueData.map(async (venue) => {
+            if (venue.latitude === "" || venue.longitude === "") {
+                return;
+            }
+            let location = await Location.findOne({ venueId: venue["@_id"] });
+            if (!location)
+                location = new Location({
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    venueId: venue["@_id"], // Store the original venue ID
+                });
+            let districtName = MatchDistrict(venue.venuee);
+            // direct find first
+            if (districtName === null) {
+                if (location && location.district) {
+                    districtName = location.district;
+                } else {
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                }
+            }
+            location.district = districtName;
+            await location.save();
+            venueIdMapping[venue["@_id"]] = location._id;
+        })
+    );
+
+    const bulkWriteEventData = req.eventData.map((event) => ({
         updateOne: {
-            filter: { eventId: event['@_id'] },
+            filter: { eventId: event["@_id"] },
             update: {
                 $set: {
                     title: event.titlee || "Untitled",
-                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
+                    venue: venueIdMapping[event.venueid],
                     date: event.predateE || "TBA",
                     time: event.progtimee || "TBA",
                     desc: event.desce || "",
                     presenter: event.presenterorge || "TBA",
-                    eventId: event['@_id']
-                }
+                    eventId: event["@_id"],
+                },
             },
-            upsert: true
-        }
-    }))
-
-    await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
-    
-    req.venueData = req.venueData.filter(venue => {
-        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
-    });
-
-    await Promise.all(req.venueData.map(async (venue) => {
-        if (venue.latitude === '' || venue.longitude === '') {
-            return;
-        }
-        let location = await Location.findOne({ venueId: venue['@_id'] });
-        if (!location)
-            location = new Location({
-                name: venue.venuee,
-                latitude: venue.latitude,
-                longitude: venue.longitude,
-                venueId: venue['@_id'],  // Store the original venue ID
-            });
-        let districtName = MatchDistrict(venue.venuee);
-        // direct find first
-        if (districtName === null) {
-            if (location && location.district) {
-                districtName = location.district;
-            } else {
-                districtName = await fetchDistrict(venue.latitude, venue.longitude);
-            }
-        }
-        location.district = districtName;
-        await location.save();
+            upsert: true,
+        },
     }));
+
+    await db
+      .collection("events")
+      .bulkWrite(bulkWriteEventData, { ordered: false });
 
     next();
 }
@@ -226,14 +236,26 @@ app.post('/api/signup', async (req, res) => {
             });
         }
 
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
+        const passwordHash = await argon2.hash(password);
+
         // Create new user
         const newUser = new User({
             username: username,
-            password: password,
-            role: 'user',
+            password: passwordHash,
+            role: 'user'
         });
 
         await newUser.save();
+
+        req.session.userId = newUser._id;
+        req.session.username = newUser.username;
+        req.session.role = newUser.role;
 
         res.status(201).json({
             success: true,
@@ -271,7 +293,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Check for password
-        if (user.password !== password) {
+        if (!(await argon2.verify(user.password, password))) {
             return res.status(401).json({
                 success: false,
                 message: 'Wrong password'
@@ -582,6 +604,29 @@ app.delete("/api/admin/users/:id", async (req, res) => {
     }
 });
 
+app.get("/api/events", async (req, res) => {
+    const venues = req.query.venueIds ? req.query.venueIds.split(",") : [];
+    const filter = venues.length > 0 ? { "venue.venueId": { $in: venues } } : {};
+    try {
+        const events = await Event.aggregate([
+        {
+            $lookup: {
+            from: "locations",
+            localField: "venue",
+            foreignField: "_id",
+            as: "venueDoc",
+            },
+        },
+        { $set: { venue: { $first: "$venueDoc" } } },
+        { $match: filter },
+        { $unset: "venueDoc" },
+        ]);
+        res.json(events);
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch events" });
+    }
+});
 
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {

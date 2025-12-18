@@ -9,7 +9,6 @@ import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
-import View from './components/View';
 
 import ChatWindow from './components/ChatWindow';
 import AdminEvents from "./components/AdminEvents";
@@ -170,9 +169,6 @@ function App() {
                     } />
                     <Route path='/map' element={
                         user ? <Map /> : <Navigate to="/login" replace />
-                    } />
-                    <Route path='/view/:venueId' element={
-                        user ? <View /> : <Navigate to="/login" replace />
                     } />
                     <Route path='/favorite' element={
                         user ? <Favorite /> : <Navigate to="/login" replace />

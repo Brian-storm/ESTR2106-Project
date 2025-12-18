@@ -308,9 +308,8 @@ function Favorite() {
                                             <td className="text-center">
                                                 <div className="fw-bold">
                                                     <Link 
-                                                        to={`/view/${venueId}`}
+                                                        to={`/map?venueId=${venueId}`}
                                                         className="text-decoration-none text-primary"
-                                                        state={{ venueName: name, fromFavorites: true }}
                                                     >
                                                         {name}
                                                     </Link>
