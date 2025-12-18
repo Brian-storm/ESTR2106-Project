@@ -50,9 +50,7 @@ function CalendarView() {
     useEffect(() => {
         async function fetchEvents() {
             try {
-                const res = await fetch("/api/admin/events", {
-                    credentials: "include"
-                });
+                const res = await fetch("/api/calendar/events");
                 if (!res.ok) throw new Error("Fetch failed");
                 setEvents(await res.json());
             } catch (err) {
