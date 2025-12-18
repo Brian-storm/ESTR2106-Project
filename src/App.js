@@ -207,79 +207,91 @@ function App() {
                 <div className="d-lg-none bg-white border-top" style={{ zIndex: 1030 }}>
                     <div className="container">
                         <div className="row text-center py-2">
+
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/'>
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/">
                                     <i className="bi bi-house fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Home</small>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Home</small>
                                 </Link>
                             </div>
+
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/event'>
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/location">
+                                    <i className="bi bi-geo-alt fs-5"></i>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Locations</small>
+                                </Link>
+                            </div>
+
+                            <div className="col">
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/event">
                                     <i className="bi bi-calendar-event fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Events</small>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Events</small>
                                 </Link>
                             </div>
+
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/map'>
-                                    <i className="bi bi-map fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Map</small>
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/calendar">
+                                    <i className="bi bi-calendar3 fs-5"></i>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Calendar</small>
                                 </Link>
                             </div>
+
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/favorite'>
+                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/favorite">
                                     <i className="bi bi-heart fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Favorites</small>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Favorites</small>
                                 </Link>
                             </div>
+
                             <div className="col">
                                 <button
                                     className="text-decoration-none text-dark d-flex flex-column align-items-center border-0 bg-transparent w-100"
                                     onClick={async () => {
-                                        await fetch('/api/logout', {
-                                            method: 'POST',
-                                            credentials: 'include'
+                                        await fetch("/api/logout", {
+                                            method: "POST",
+                                            credentials: "include"
                                         });
                                         setUser(null);
                                         checkAuth();
                                     }}
                                 >
                                     <i className="bi bi-box-arrow-right fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.75rem' }}>Logout</small>
+                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Logout</small>
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>
-            ) : (<></>)}
+            ) : null}
 
             {/* Extra Menu for Admin - Additional Bottom Menu */}
             {user && user.role === "admin" && (
-                <div
-                    className="d-lg-none bg-light border-top"
-                    style={{
-                        zIndex: 1025,
-                    }}
-                >
+                <div className="d-lg-none bg-light border-top" style={{ zIndex: 1025 }}>
                     <div className="container">
                         <div className="row text-center py-2">
+
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to='/admin/events'>
+                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to="/admin/events">
                                     <i className="bi bi-tools fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.7rem' }}>Events</small>
+                                    <small className="mt-1" style={{ fontSize: "0.7rem" }}>Events</small>
                                 </Link>
                             </div>
+
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to='/admin/users'>
+                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to="/admin/users">
                                     <i className="bi bi-people fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.7rem' }}>Users</small>
+                                    <small className="mt-1" style={{ fontSize: "0.7rem" }}>Users</small>
                                 </Link>
                             </div>
+
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/location'>
-                                    <i className="bi bi-geo-alt fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: '0.7rem' }}>Locations</small>
+                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to="/admin/auditlogs">
+                                    <i className="bi bi-clipboard-data fs-5"></i>
+                                    <small className="mt-1" style={{ fontSize: "0.7rem" }}>Logs</small>
                                 </Link>
                             </div>
+
                         </div>
                     </div>
                 </div>
