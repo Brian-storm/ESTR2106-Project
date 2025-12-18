@@ -1,0 +1,57 @@
+.calendar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.calendar-event {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.calendar-date {
+    min-width: 110px;
+    background: #f1f3f5;
+    font-size: 1.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+}
+
+.calendar-content {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+}
+
+.event-title {
+    margin-bottom: 6px;
+}
+
+.event-date-full {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.event-meta,
+.event-presenter {
+    font-size: 0.9rem;
+    color: #666;
+}
+.month-header {
+    font-weight: 700;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+}
+
+.section-header {
+    font-weight: 600;
+    color: #555;
+    margin: 12px 0 6px;
+}

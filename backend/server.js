@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
+const argon2 = require('@node-rs/argon2');
 const { Event, Location, User, Comment } = require('./modules/models');
 const { isPointInPolygon } = require("./utils");
 
@@ -33,6 +34,40 @@ const fetchDistrictBoundaries = async () => {
     const data = await res.json();
     districtBoundaries.push(...data.features);
 }
+
+// ================== AUDIT LOG MODEL ==================
+const AuditLogSchema = new mongoose.Schema({
+    adminId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    adminUsername: {
+        type: String,
+        required: true
+    },
+    action: {
+        type: String,
+        enum: ["CREATE", "UPDATE", "DELETE"],
+        required: true
+    },
+    targetType: {
+        type: String,
+        enum: ["Event", "User"],
+        required: true
+    },
+    targetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
+
 
 // Upon Successful Opening of the database
 db.once('open', async function () {
@@ -78,6 +113,23 @@ const checkSession = (req, res, next) => {
     next();
 };
 app.use(checkSession);
+
+// ================== ADMIN AUDIT LOGGER ==================
+async function logAdminAction(req, action, targetType, targetId) {
+    if (!req.session || req.session.role !== "admin") return;
+
+    try {
+        await AuditLog.create({
+            adminId: req.session.userId,
+            adminUsername: req.session.username,
+            action,
+            targetType,
+            targetId
+        });
+    } catch (err) {
+        console.error("Audit log error:", err);
+    }
+}
 
 // Analyze district by referring to subdistrict name first to reduce fetching
 const { districtMapping } = require("./modules/district");
@@ -134,54 +186,60 @@ const updateData = async (req, res, next) => {
     const eventData = parser.parse(eventText);
     req.eventData = eventData.events?.event || [];
 
-    const bulkWriteEventData = req.eventData.map(event => ({
+    req.venueData = req.venueData.filter((venue) => {
+        return req.eventData.some(
+            (event) => event.venueid?.toString() === venue["@_id"]
+        );
+    });
+
+    const venueIdMapping = {};
+
+    await Promise.all(
+        req.venueData.map(async (venue) => {
+            let location = await Location.findOne({ venueId: venue["@_id"] });
+            if (!location)
+                location = new Location({
+                    name: venue.venuee,
+                    latitude: venue.latitude,
+                    longitude: venue.longitude,
+                    venueId: venue["@_id"], // Store the original venue ID
+                });
+            let districtName = MatchDistrict(venue.venuee);
+            // direct find first
+            if (districtName === null) {
+                if (location && location.district) {
+                    districtName = location.district;
+                } else {
+                    districtName = await fetchDistrict(venue.latitude, venue.longitude);
+                }
+            }
+            location.district = districtName;
+            await location.save();
+            venueIdMapping[venue["@_id"]] = location._id;
+        })
+    );
+
+    const bulkWriteEventData = req.eventData.map((event) => ({
         updateOne: {
-            filter: { eventId: event['@_id'] },
+            filter: { eventId: event["@_id"] },
             update: {
                 $set: {
                     title: event.titlee || "Untitled",
-                    venueId: typeof(event.venueid) === "number" ? event.venueid.toString() : (event.venueid || "TBA"),
+                    venue: venueIdMapping[event.venueid],
                     date: event.predateE || "TBA",
                     time: event.progtimee || "TBA",
                     desc: event.desce || "",
                     presenter: event.presenterorge || "TBA",
-                    eventId: event['@_id']
-                }
+                    eventId: event["@_id"],
+                },
             },
-            upsert: true
-        }
-    }))
-
-    await db.collection('events').bulkWrite(bulkWriteEventData, { ordered: false });
-    
-    req.venueData = req.venueData.filter(venue => {
-        return req.eventData.some(event => event.venueid?.toString() === venue['@_id']);
-    });
-
-    await Promise.all(req.venueData.map(async (venue) => {
-        if (venue.latitude === '' || venue.longitude === '') {
-            return;
-        }
-        let location = await Location.findOne({ venueId: venue['@_id'] });
-        if (!location)
-            location = new Location({
-                name: venue.venuee,
-                latitude: venue.latitude,
-                longitude: venue.longitude,
-                venueId: venue['@_id'],  // Store the original venue ID
-            });
-        let districtName = MatchDistrict(venue.venuee);
-        // direct find first
-        if (districtName === null) {
-            if (location && location.district) {
-                districtName = location.district;
-            } else {
-                districtName = await fetchDistrict(venue.latitude, venue.longitude);
-            }
-        }
-        location.district = districtName;
-        await location.save();
+            upsert: true,
+        },
     }));
+
+    await db
+      .collection("events")
+      .bulkWrite(bulkWriteEventData, { ordered: false });
 
     next();
 }
@@ -197,7 +255,7 @@ app.get('/', (req, res) => {
 
 // Check Authentication
 app.get('/api/check-auth', (req, res) => {
-    if (req.session && req.session.userId) {
+    if (req.session && req.session.rememberMe && req.session.userId) {
         res.json({
             userId: req.session.userId,
             username: req.session.username,
@@ -226,14 +284,26 @@ app.post('/api/signup', async (req, res) => {
             });
         }
 
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
+        const passwordHash = await argon2.hash(password);
+
         // Create new user
         const newUser = new User({
             username: username,
-            password: password,
+            password: passwordHash,
             role: 'user'
         });
 
         await newUser.save();
+
+        req.session.userId = newUser._id;
+        req.session.username = newUser.username;
+        req.session.role = newUser.role;
 
         res.status(201).json({
             success: true,
@@ -271,7 +341,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Check for password
-        if (user.password !== password) {
+        if (!(await argon2.verify(user.password, password))) {
             return res.status(401).json({
                 success: false,
                 message: 'Wrong password'
@@ -281,6 +351,7 @@ app.post('/api/login', async (req, res) => {
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.role = user.role;
+        req.session.rememberMe = req.body.rememberMe;
 
         console.log('Session created successfully for user:', username);
 
@@ -337,6 +408,23 @@ app.get('/api/fetchEvents', updateData, async (req, res) => {
     const locations = await Location.find({});
     res.json(locations);
 })
+
+// ================== USER: CALENDAR EVENTS ==================
+app.get("/api/calendar/events", async (req, res) => {
+    try {
+        const events = await Event.find({})
+            .sort({ date: 1 })
+            .select("title venue date time presenter desc")
+            .populate("venue");
+
+        res.json(events);
+    } catch (err) {
+        console.error("Calendar fetch failed:", err);
+        res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+});
+
+
 //fetch data
 app.get("/api/admin/events", async (req, res) => {
     // Access control
@@ -364,6 +452,9 @@ app.put("/api/admin/events/:id", async (req, res) => {
             req.body,
             { new: true }
         );
+        if (updated) {
+            await logAdminAction(req, "UPDATE", "Event", updated._id);
+        }
         res.json(updated);
     } catch (err) {
         console.error("Update failed:", err);
@@ -377,7 +468,11 @@ app.delete("/api/admin/events/:id", async (req, res) => {
     }
 
     try {
-        await Event.findByIdAndDelete(req.params.id);
+        const deleted = await Event.findByIdAndDelete(req.params.id);
+        if (deleted) {
+            await logAdminAction(req, "DELETE", "Event", deleted._id);
+        }
+
         res.json({ success: true });
     } catch (err) {
         console.error("Delete failed:", err);
@@ -421,16 +516,17 @@ app.post("/api/admin/events", async (req, res) => {
 
         /* ================== CREATE EVENT ================== */
         const newEvent = new Event({
-        eventId: crypto.randomUUID(),   // or uuidv4()
-        title: title.trim(),
-        venue: venue.trim(),
-        date,
-        time: time || "TBA",
-        presenter: presenter || "TBA",
-        desc: desc || ""
-    });
+            eventId: crypto.randomUUID(),   // or uuidv4()
+            title: title.trim(),
+            venue: venue.trim(),
+            date,
+            time: time || "TBA",
+            presenter: presenter || "TBA",
+            desc: desc || ""
+        });
 
         const saved = await newEvent.save();
+        await logAdminAction(req, "CREATE", "Event", saved._id);
 
         return res.status(201).json(saved);
 
@@ -509,6 +605,7 @@ app.post("/api/admin/users", async (req, res) => {
         });
 
         const saved = await newUser.save();
+        await logAdminAction(req, "CREATE", "User", saved._id);
 
         res.status(201).json({
             _id: saved._id,
@@ -539,7 +636,9 @@ app.put("/api/admin/users/:id", async (req, res) => {
             },
             { new: true }
         ).select("-password");
-
+        if (updated) {
+            await logAdminAction(req, "UPDATE", "User", updated._id);
+        }
         if (!updated) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -568,6 +667,9 @@ app.delete("/api/admin/users/:id", async (req, res) => {
         }
 
         const deleted = await User.findByIdAndDelete(req.params.id);
+        if (deleted) {
+            await logAdminAction(req, "DELETE", "User", deleted._id);
+        }
 
         if (!deleted) {
             return res.status(404).json({ error: "User not found" });
@@ -581,6 +683,47 @@ app.delete("/api/admin/users/:id", async (req, res) => {
     }
 });
 
+// ================== ADMIN: AUDIT LOGS (READ-ONLY) ==================
+app.get("/api/admin/audit-logs", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const logs = await AuditLog.find({})
+            .sort({ timestamp: -1 })
+            .limit(200);
+
+        res.json(logs);
+    } catch (err) {
+        console.error("Fetch audit logs failed:", err);
+        res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+});
+
+app.get("/api/events", async (req, res) => {
+    const venues = req.query.venueIds ? req.query.venueIds.split(",") : [];
+    const filter = venues.length > 0 ? { "venue.venueId": { $in: venues } } : {};
+    try {
+        const events = await Event.aggregate([
+        {
+            $lookup: {
+            from: "locations",
+            localField: "venue",
+            foreignField: "_id",
+            as: "venueDoc",
+            },
+        },
+        { $set: { venue: { $first: "$venueDoc" } } },
+        { $match: filter },
+        { $unset: "venueDoc" },
+        ]);
+        res.json(events);
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch events" });
+    }
+});
 
 // 添加 Favorite 相关路由
 app.get('/api/favorites', checkSession, async (req, res) => {
@@ -672,16 +815,48 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
 });
 
 app.get("/api/locations", async (req, res) => {
-    let venueIds = req.query.venueIds ? req.query.venueIds.split(',') : [];
     try {
-        const locations = venueIds.length > 0 ? await Location.find({ venueId: { $in: venueIds } }) : await Location.find({});
-        await Promise.all(venueIds.map(async (venueId, index) => {
-            locations[index]._doc.eventCount = await Event.countDocuments({ venueId });
-        }));
+        const venueIds = req.query.venueIds
+            ? req.query.venueIds.split(",")
+            : [];
+
+        const matchStage =
+            venueIds.length > 0
+                ? { venueId: { $in: venueIds } }
+                : {};
+
+        const locations = await Location.aggregate([
+            { $match: matchStage },
+
+            {
+                $lookup: {
+                    from: "events",
+                    localField: "_id",
+                    foreignField: "venue",
+                    as: "events"
+                }
+            },
+
+            {
+                $addFields: {
+                    eventCount: { $size: "$events" }
+                }
+            },
+
+            {
+                $project: {
+                    events: 0
+                }
+            }
+        ]);
+
         res.json(locations);
+
     } catch (error) {
         console.error("Error fetching locations:", error);
-        res.status(500).json({ error: "Failed to fetch locations" });
+        res.status(500).json({
+            error: "Failed to fetch locations"
+        });
     }
 });
 
@@ -717,4 +892,18 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
         console.error("Error adding comment:", error);
         res.status(500).json({ success: false, message: "Failed to add comment" });
     }
+});
+
+// Extra Feature 1 - Chatbot
+const { chat } = require('./modules/chatbot');
+app.post('/api/chatbot', async (req, res) => {
+    const userInput = req.body.userInput;
+    const selectedVenues = req.body.selectedVenues;
+
+    if (!userInput) {
+        res.send("No user input");
+    }
+
+    const botResponse = await chat(userInput, selectedVenues);
+    res.send(botResponse);
 });

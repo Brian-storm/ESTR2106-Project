@@ -414,15 +414,10 @@ function Home() {
                                     </td>
                                     <td>
                                         <div className="fw-bold">
-                                            {/* 添加可点击的链接到 View 页面 */}
+                                            {/* 添加可点击的链接到 Map 页面，打开侧面板 */}
                                             <Link 
-                                                to={`/view/${venue.venueId}`}
+                                                to={`/map?venueId=${venue.venueId}`}
                                                 className="text-decoration-none text-primary"
-                                                state={{ 
-                                                    venueName: venue.name,
-                                                    venueData: venue,
-                                                    fromHome: true 
-                                                }}
                                             >
                                                 {venue.name}
                                             </Link>

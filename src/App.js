@@ -9,9 +9,13 @@ import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
-import View from './components/View';
+
+import ChatWindow from './components/ChatWindow';
+import Calendar from './components/CalendarView';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
+import AuditLog from "./components/AuditLog";
+
 
 import './App.css';
 
@@ -82,6 +86,9 @@ function App() {
                             <Link className="nav-link" to='/map'>Map</Link>
                         </li>
                         <li className="nav-item">
+                            <Link className="nav-link" to='/calendar'>Events Calender</Link>
+                        </li>
+                        <li className="nav-item">
                             <Link className="nav-link" to='/favorite'>Favorites</Link>
                         </li>
 
@@ -93,6 +100,9 @@ function App() {
                                 </li>
                                 <li className="nav-item">
                                     <Link className="nav-link" to='/admin/users'>Manage Users</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className="nav-link" to='/admin/auditlogs'>Audit Logs</Link>
                                 </li>
                             </>
                         )}
@@ -152,6 +162,9 @@ function App() {
 
             {/* Main Content - Adjusted padding for mobile */}
             <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
+                {/* Chat Window (always displayed after login) */}
+                {user && <ChatWindow user={user}/>}
+                
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
@@ -165,14 +178,14 @@ function App() {
                     <Route path='/map' element={
                         user ? <Map /> : <Navigate to="/login" replace />
                     } />
-                    <Route path='/view/:venueId' element={
-                        user ? <View /> : <Navigate to="/login" replace />
-                    } />
                     <Route path='/favorite' element={
                         user ? <Favorite /> : <Navigate to="/login" replace />
                     } />
                     <Route path='/login' element={
                         user ? <Navigate to="/" replace /> : <Login setUser={setUser} />
+                    } />
+                    <Route path='/calendar' element={
+                        user ? <Calendar /> : <Navigate to="/login" replace />
                     } />
                     <Route path="/admin/events" element={
                         user && user.role === "admin" ? <AdminEvents user={user} /> : <Navigate to="/" replace />
@@ -180,9 +193,12 @@ function App() {
                     <Route path="/admin/users" element={
                         user && user.role === "admin" ? <AdminUsers user={user} /> : <Navigate to="/" replace />
                     } />
+                    <Route path="/admin/auditlogs" element={
+                        user && user.role === "admin" ? <AuditLog user={user} /> : <Navigate to="/" replace />
+                    } />
                     <Route path='*' element={
                         <Navigate to={user ? "/" : "/login"} replace />
-                    } />
+                    } />`   `
                 </Routes>
             </div>
 
