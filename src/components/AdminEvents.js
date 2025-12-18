@@ -234,7 +234,7 @@ function AdminEvents({ user }) {
                         {events.map(ev => (
                             <tr key={ev._id}>
                                 <td style={cellStyle}>{ev.title}</td>
-                                <td style={cellStyle}>{ev.venue}</td>
+                                <td style={cellStyle}>{ev.venue?.name}</td>
 
                                 <td style={cellStyle}>{ev.date}</td>
                                 <td style={cellStyle}>{ev.time}</td>

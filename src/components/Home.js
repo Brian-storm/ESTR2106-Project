@@ -249,7 +249,7 @@ function Home() {
             <div className="mb-4">
                 <div className="row">
                     {/* 名称搜索 - 调整高度 */}
-                    <div className="col-4">
+                    <div className="col-md-4 mb-3 mb-md-0">
                         <div className="card border h-100">
                             <div className="card-body p-3 d-flex flex-column justify-content-center">
                                 <h6 className="card-title mb-2">
@@ -279,7 +279,7 @@ function Home() {
                     </div>
 
                     {/* 区域筛选 */}
-                    <div className="col-4">
+                    <div className="col-md-4 mb-3 mb-md-0">
                         <div className="card border h-100">
                             <div className="card-body p-3 d-flex flex-column justify-content-center">
                                 <h6 className="card-title mb-2">
@@ -316,7 +316,7 @@ function Home() {
                     </div>
                     
                     {/* 距离筛选 - 最大距离设为100km */}
-                    <div className="col-4">
+                    <div className="col-md-4">
                         <div className="card border h-100">
                             <div className="card-body p-3 d-flex flex-column justify-content-center">
                                 
