@@ -35,6 +35,40 @@ const fetchDistrictBoundaries = async () => {
     districtBoundaries.push(...data.features);
 }
 
+// ================== AUDIT LOG MODEL ==================
+const AuditLogSchema = new mongoose.Schema({
+    adminId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    adminUsername: {
+        type: String,
+        required: true
+    },
+    action: {
+        type: String,
+        enum: ["CREATE", "UPDATE", "DELETE"],
+        required: true
+    },
+    targetType: {
+        type: String,
+        enum: ["Event", "User"],
+        required: true
+    },
+    targetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
+
+
 // Upon Successful Opening of the database
 db.once('open', async function () {
     console.log("Connection is open...");
@@ -79,6 +113,23 @@ const checkSession = (req, res, next) => {
     next();
 };
 app.use(checkSession);
+
+// ================== ADMIN AUDIT LOGGER ==================
+async function logAdminAction(req, action, targetType, targetId) {
+    if (!req.session || req.session.role !== "admin") return;
+
+    try {
+        await AuditLog.create({
+            adminId: req.session.userId,
+            adminUsername: req.session.username,
+            action,
+            targetType,
+            targetId
+        });
+    } catch (err) {
+        console.error("Audit log error:", err);
+    }
+}
 
 // Analyze district by referring to subdistrict name first to reduce fetching
 const { districtMapping } = require("./modules/district");
@@ -145,9 +196,6 @@ const updateData = async (req, res, next) => {
 
     await Promise.all(
         req.venueData.map(async (venue) => {
-            if (venue.latitude === "" || venue.longitude === "") {
-                return;
-            }
             let location = await Location.findOne({ venueId: venue["@_id"] });
             if (!location)
                 location = new Location({
@@ -360,6 +408,23 @@ app.get('/api/fetchEvents', updateData, async (req, res) => {
     const locations = await Location.find({});
     res.json(locations);
 })
+
+// ================== USER: CALENDAR EVENTS ==================
+app.get("/api/calendar/events", async (req, res) => {
+    try {
+        const events = await Event.find({})
+            .sort({ date: 1 })
+            .select("title venue date time presenter desc")
+            .populate("venue");
+
+        res.json(events);
+    } catch (err) {
+        console.error("Calendar fetch failed:", err);
+        res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+});
+
+
 //fetch data
 app.get("/api/admin/events", async (req, res) => {
     // Access control
@@ -387,6 +452,9 @@ app.put("/api/admin/events/:id", async (req, res) => {
             req.body,
             { new: true }
         );
+        if (updated) {
+            await logAdminAction(req, "UPDATE", "Event", updated._id);
+        }
         res.json(updated);
     } catch (err) {
         console.error("Update failed:", err);
@@ -400,7 +468,11 @@ app.delete("/api/admin/events/:id", async (req, res) => {
     }
 
     try {
-        await Event.findByIdAndDelete(req.params.id);
+        const deleted = await Event.findByIdAndDelete(req.params.id);
+        if (deleted) {
+            await logAdminAction(req, "DELETE", "Event", deleted._id);
+        }
+
         res.json({ success: true });
     } catch (err) {
         console.error("Delete failed:", err);
@@ -454,6 +526,7 @@ app.post("/api/admin/events", async (req, res) => {
         });
 
         const saved = await newEvent.save();
+        await logAdminAction(req, "CREATE", "Event", saved._id);
 
         return res.status(201).json(saved);
 
@@ -532,6 +605,7 @@ app.post("/api/admin/users", async (req, res) => {
         });
 
         const saved = await newUser.save();
+        await logAdminAction(req, "CREATE", "User", saved._id);
 
         res.status(201).json({
             _id: saved._id,
@@ -562,7 +636,9 @@ app.put("/api/admin/users/:id", async (req, res) => {
             },
             { new: true }
         ).select("-password");
-
+        if (updated) {
+            await logAdminAction(req, "UPDATE", "User", updated._id);
+        }
         if (!updated) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -591,6 +667,9 @@ app.delete("/api/admin/users/:id", async (req, res) => {
         }
 
         const deleted = await User.findByIdAndDelete(req.params.id);
+        if (deleted) {
+            await logAdminAction(req, "DELETE", "User", deleted._id);
+        }
 
         if (!deleted) {
             return res.status(404).json({ error: "User not found" });
@@ -601,6 +680,24 @@ app.delete("/api/admin/users/:id", async (req, res) => {
     } catch (err) {
         console.error("Admin delete user failed:", err);
         res.status(500).json({ error: "Delete user failed" });
+    }
+});
+
+// ================== ADMIN: AUDIT LOGS (READ-ONLY) ==================
+app.get("/api/admin/audit-logs", async (req, res) => {
+    if (!req.session || req.session.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+
+    try {
+        const logs = await AuditLog.find({})
+            .sort({ timestamp: -1 })
+            .limit(200);
+
+        res.json(logs);
+    } catch (err) {
+        console.error("Fetch audit logs failed:", err);
+        res.status(500).json({ error: "Failed to fetch audit logs" });
     }
 });
 

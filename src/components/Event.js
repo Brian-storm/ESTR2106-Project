@@ -23,7 +23,7 @@ const Event = () => {
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
-  const [maxDistance, setMaxDistance] = useState(100);
+  const [maxDistance, setMaxDistance] = useState(50);
   const [sortConfig, setSortConfig] = useState({
     key: "event",
     direction: "asc",
@@ -137,13 +137,13 @@ const Event = () => {
 
     setSortedFilteredEvents(sorted);
   }, [
+    events,
+    maxDistance,
     searchQuery,
     selectedDistrict,
+    sortConfig.direction,
+    sortConfig.key,
     userLocation,
-    maxDistance,
-    sortConfig,
-    sortedFilteredEvents,
-    events,
   ]);
 
   return (
