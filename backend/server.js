@@ -451,7 +451,7 @@ app.get("/api/admin/events", async (req, res) => {
     }
 
     try {
-        const events = await Event.find({}).sort({ date: 1 });
+        const events = await Event.find({}).populate("venue").sort({ date: 1 });
         res.json(events);
     } catch (err) {
         console.error("Admin fetch events failed:", err);
