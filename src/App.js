@@ -203,7 +203,7 @@ function App() {
 
             {/* Mobile Bottom Navigation */}
             {user ? (
-                <div className="d-lg-none border-top" style={{ zIndex: 1030, backgroundColor: 'var(--bs-body-bg, #fff)', color: 'var(--bs-body-color, #000)' }}>
+                <div className="d-lg-none border-top mobile-bottom-nav" style={{ zIndex: 1030, backgroundColor: 'var(--bs-body-bg, #fff)', color: 'var(--bs-body-color, #000)' }}>
                     <div className="container">
                         <div className="row text-center py-2">
 
@@ -268,7 +268,7 @@ function App() {
             {/* Extra Menu for Admin - Additional Bottom Menu */}
             {user && user.role === "admin" && (
                 <div
-                    className="d-lg-none border-top"
+                    className="d-lg-none border-top mobile-bottom-nav admin-bottom-nav"
                     style={{
                         zIndex: 1025,
                         backgroundColor: 'var(--bs-body-bg, #f8f9fa)',

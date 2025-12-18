@@ -175,7 +175,7 @@ const Event = () => {
       )}
       <div className="mb-4">
         <div className="row">
-          <div className="col-4">
+          <div className="col-md-4 mb-md-0 mb-3">
             <div className="card border h-100">
               <div className="card-body p-3 d-flex flex-column justify-content-center">
                 <h6 className="card-title mb-2">
@@ -205,7 +205,7 @@ const Event = () => {
           </div>
 
           {/* 区域筛选 */}
-          <div className="col-4">
+          <div className="col-md-4 mb-md-0 mb-3">
             <div className="card border h-100">
               <div className="card-body p-3 d-flex flex-column justify-content-center">
                 <h6 className="card-title mb-2">
@@ -241,7 +241,7 @@ const Event = () => {
             </div>
           </div>
 
-          <div className="col-4">
+          <div className="col-md-4">
             <div className="card border h-100">
               <div className="card-body p-3 d-flex flex-column justify-content-center">
                 <div className="text-center mb-2">
