@@ -50,7 +50,8 @@
 }
 
 /* Dark mode table rows */
-[data-bs-theme="dark"] .table tbody tr {
+[data-bs-theme="dark"] .table tbody tr,
+[data-bs-theme="dark"] .no-result {
     background-color: #4a5568 !important;
 }
 
