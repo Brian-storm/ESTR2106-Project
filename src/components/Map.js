@@ -4,7 +4,7 @@ import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useCallback, useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const icon = L.icon({iconUrl: MarkerIcon, iconSize: [25, 41], iconAnchor: [12, 41]});
 
@@ -15,16 +15,28 @@ function Map() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [addingComment, setAddingComment] = useState(false);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetch("/api/locations")
       .then((response) => response.json())
       .then((data) => {
         setVenues(data);
+        
+        // Check if venueId is in the query parameters
+        const venueId = searchParams.get('venueId');
+        if (venueId) {
+          // Find the index of the venue with this venueId
+          const venueIndex = data.findIndex(v => v.venueId === venueId);
+          if (venueIndex !== -1) {
+            setSelectedVenue(venueIndex);
+            setIsPanelOpen(true);
+          }
+        }
       }).catch((error) => {
         console.error("Error fetching locations:", error);
       });
-  }, []);
+  }, [searchParams]);
 
   const fetchCurrentVenueComments = useCallback(async () => {
     if (!venues[selectedVenue]) return;

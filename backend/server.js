@@ -718,3 +718,21 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to add comment" });
     }
 });
+
+app.get("/api/locations/:locationId", async (req, res) => {
+    const locationId = req.params.locationId;
+    try {
+        // Check if locationId is a valid MongoDB ObjectId
+        if (!locationId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: "Invalid location ID format" });
+        }
+        const location = await Location.findById(locationId);
+        if (!location) {
+            return res.status(404).json({ error: "Location not found" });
+        }
+        res.json(location);
+    } catch (error) {
+        console.error("Error fetching location:", error);
+        res.status(500).json({ error: "Failed to fetch location" });
+    }
+});
