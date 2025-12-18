@@ -10,8 +10,10 @@ import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
 import View from './components/View';
+import Calendar from './components/CalendarView';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
+import AuditLog from "./components/AuditLog";
 
 import './App.css';
 
@@ -82,6 +84,9 @@ function App() {
                             <Link className="nav-link" to='/map'>Map</Link>
                         </li>
                         <li className="nav-item">
+                            <Link className="nav-link" to='/calendar'>Events Calender</Link>
+                        </li>
+                        <li className="nav-item">
                             <Link className="nav-link" to='/favorite'>Favorites</Link>
                         </li>
 
@@ -93,6 +98,9 @@ function App() {
                                 </li>
                                 <li className="nav-item">
                                     <Link className="nav-link" to='/admin/users'>Manage Users</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className="nav-link" to='/admin/auditlogs'>Audit Logs</Link>
                                 </li>
                             </>
                         )}
@@ -172,6 +180,9 @@ function App() {
                     <Route path='/view/:venueId' element={
                         user ? <View /> : <Navigate to="/login" replace />
                     } />
+                    <Route path='/calendar' element={
+                        user ? <Calendar /> : <Navigate to="/login" replace />
+                    } />
                     <Route path='/favorite' element={
                         user ? <Favorite /> : <Navigate to="/login" replace />
                     } />
@@ -184,9 +195,12 @@ function App() {
                     <Route path="/admin/users" element={
                         user && user.role === "admin" ? <AdminUsers user={user} /> : <Navigate to="/" replace />
                     } />
+                    <Route path="/admin/auditlogs" element={
+                        user && user.role === "admin" ? <AuditLog user={user} /> : <Navigate to="/" replace />
+                    } />
                     <Route path='*' element={
                         <Navigate to={user ? "/" : "/login"} replace />
-                    } />
+                    } />`   `
                 </Routes>
             </div>
 

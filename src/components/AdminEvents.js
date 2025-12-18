@@ -3,12 +3,36 @@ import { Navigate } from "react-router-dom";
 
 const PAGE_SIZE = 10;
 
+/* ================== PAGINATION ================== */
+function Pagination({ page, totalPages, setPage }) {
+    return (
+        <div className="d-flex justify-content-center align-items-center gap-2 my-3">
+            <button
+                className="btn btn-outline-secondary btn-sm"
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+            >
+                Prev
+            </button>
+            <span className="fw-semibold">
+                Page {page} / {totalPages}
+            </span>
+            <button
+                className="btn btn-outline-secondary btn-sm"
+                disabled={page === totalPages}
+                onClick={() => setPage(p => p + 1)}
+            >
+                Next
+            </button>
+        </div>
+    );
+}
+
+/* ================== MAIN ================== */
 function AdminEvents({ user }) {
-    /* ================== STATE ================== */
     const [page, setPage] = useState(1);
     const [events, setEvents] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -16,7 +40,6 @@ function AdminEvents({ user }) {
     const [showAddModal, setShowAddModal] = useState(false);
 
     const pageCache = useRef({});
-    
 
     const emptyForm = {
         title: "",
@@ -29,7 +52,7 @@ function AdminEvents({ user }) {
 
     const [form, setForm] = useState(emptyForm);
 
-    /* ================== FETCH PAGE ================== */
+    /* ================== FETCH ================== */
     const fetchPage = useCallback(async (pageNumber, preload = false) => {
         if (pageCache.current[pageNumber]) {
             if (!preload) {
@@ -45,54 +68,40 @@ function AdminEvents({ user }) {
                 setError(null);
             }
 
-            const res = await fetch("/api/admin/events", {
-                credentials: "include"
-            });
-            if (!res.ok) throw new Error("Fetch failed");
+            const res = await fetch("/api/admin/events", { credentials: "include" });
+            if (!res.ok) throw new Error();
 
-            const allEvents = await res.json();
-            const total = Math.max(1, Math.ceil(allEvents.length / PAGE_SIZE));
+            const all = await res.json();
+            const total = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
             setTotalPages(total);
 
-            const sliced = allEvents.slice(
+            const sliced = all.slice(
                 (pageNumber - 1) * PAGE_SIZE,
                 pageNumber * PAGE_SIZE
             );
 
             pageCache.current[pageNumber] = sliced;
-
             if (!preload) setEvents(sliced);
-        } catch (err) {
-            console.error(err);
+        } catch {
             setError("Failed to load events");
         } finally {
             if (!preload) setLoading(false);
         }
     }, []);
-    /* ================== EFFECT ================== */
+
     useEffect(() => {
         fetchPage(page, false);
-        if (page < totalPages) {
-            fetchPage(page + 1, true);
-        }
+        if (page < totalPages) fetchPage(page + 1, true);
     }, [page, totalPages, fetchPage]);
 
-    /* ================== ACCESS CONTROL ================== */
     if (!user || user.role !== "admin") {
         return <Navigate to="/" replace />;
     }
 
     /* ================== CRUD ================== */
-    const startEdit = (ev) => {
+    const startEdit = ev => {
         setEditingId(ev._id);
-        setForm({
-            title: ev.title || "",
-            venue: ev.venue || "",
-            date: ev.date || "",
-            time: ev.time || "",
-            presenter: ev.presenter || "",
-            desc: ev.desc || ""
-        });
+        setForm({ ...emptyForm, ...ev });
     };
 
     const cancelEdit = () => {
@@ -101,76 +110,65 @@ function AdminEvents({ user }) {
     };
 
     const saveEdit = async () => {
-        try {
-            const res = await fetch(`/api/admin/events/${editingId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(form)
-            });
-            if (!res.ok) throw new Error();
+        const res = await fetch(`/api/admin/events/${editingId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(form)
+        });
+        if (!res.ok) return alert("Update failed");
 
-            pageCache.current = {};
-            setEditingId(null);
-            fetchPage(page);
-        } catch {
-            alert("Failed to update event");
-        }
+        pageCache.current = {};
+        setEditingId(null);
+        fetchPage(page);
     };
 
     const saveNewEvent = async () => {
-        try {
-            const res = await fetch("/api/admin/events", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(form)
-            });
-            if (!res.ok) throw new Error();
+        const res = await fetch("/api/admin/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(form)
+        });
+        if (!res.ok) return alert("Create failed");
 
-            pageCache.current = {};
-            setShowAddModal(false);
-            setForm(emptyForm);
-            setPage(1);
-            fetchPage(1);
-        } catch {
-            alert("Failed to create event");
-        }
+        pageCache.current = {};
+        setShowAddModal(false);
+        setForm(emptyForm);
+        setPage(1);
+        fetchPage(1);
     };
 
-    const deleteEvent = async (id) => {
+    const deleteEvent = async id => {
         if (!window.confirm("Delete this event?")) return;
 
-        try {
-            const res = await fetch(`/api/admin/events/${id}`, {
-                method: "DELETE",
-                credentials: "include"
-            });
-            if (!res.ok) throw new Error();
+        const res = await fetch(`/api/admin/events/${id}`, {
+            method: "DELETE",
+            credentials: "include"
+        });
+        if (!res.ok) return alert("Delete failed");
 
-            pageCache.current = {};
-            setPage(1);
-            fetchPage(1);
-        } catch {
-            alert("Delete failed");
-        }
+        pageCache.current = {};
+        setPage(1);
+        fetchPage(1);
     };
 
-    /* ================== UI STATES ================== */
-    if (loading) {
-        return <div className="container-fluid mt-4">Loading events…</div>;
-    }
+    if (loading) return <div className="container-fluid mt-4">Loading…</div>;
+    if (error) return <div className="container-fluid mt-4 text-danger">{error}</div>;
 
-    if (error) {
-        return <div className="container-fluid mt-4 text-danger">{error}</div>;
-    }
+    const cellStyle = {
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        verticalAlign: "top"
+    };
 
-    /* ================== RENDER ================== */
+
     return (
-        <div className="container-fluid mt-4">
-            {/* header */}
-            <div className="d-flex justify-content-between mb-2">
-                <h2>Admin – Event Management</h2>
+        <div className="container-fluid mt-3">
+            {/* HEADER */}
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                <h2 className="mb-0">Admin – Event Management</h2>
                 <button
                     className="btn btn-success"
                     onClick={() => {
@@ -182,167 +180,142 @@ function AdminEvents({ user }) {
                 </button>
             </div>
 
-            {/* table */}
-            <div className="table-responsive">
-                <table className="table table-bordered table-sm w-100">
+            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+
+            {/* ================== DESKTOP TABLE ================== */}
+            <div className="d-none d-md-block">
+                <table
+                    className="table table-bordered table-sm align-middle mb-0"
+                    style={{ tableLayout: "fixed", width: "100%" }}
+                >
                     <thead className="table-light">
                         <tr>
-                            <th>Title</th>
-                            <th>Venue</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Presenter</th>
-                            <th>Description</th>
-                            <th style={{ width: 160 }}>Actions</th>
+                            <th style={{ width: "16%" }}>Title</th>
+                            <th style={{ width: "14%" }}>Venue</th>
+                            <th style={{ width: "10%" }}>Date</th>
+                            <th style={{ width: "8%" }}>Time</th>
+                            <th style={{ width: "14%" }}>Presenter</th>
+                            <th style={{ width: "28%" }}>Description</th>
+                            <th style={{ width: "10%" }}>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {events.map(ev => (
-                            <tr key={ev._id}>
-                                {["title", "venue", "date", "time", "presenter"].map(k => (
-                                    <td key={k}>
-                                        {editingId === ev._id ? (
-                                            <input
-                                                className="form-control form-control-sm"
-                                                value={form[k]}
-                                                onChange={e =>
-                                                    setForm({ ...form, [k]: e.target.value })
-                                                }
-                                            />
-                                        ) : ev[k]}
+                        <tbody>
+                            {events.map(ev => (
+                                <tr key={ev._id}>
+                                    <td style={cellStyle}>{ev.title}</td>
+                                    <td style={cellStyle}>{ev.venue}</td>
+
+                                    <td style={cellStyle}>{ev.date}</td>
+                                    <td style={cellStyle}>{ev.time}</td>
+
+                                    <td style={cellStyle}>{ev.presenter}</td>
+                                    <td style={cellStyle}>{ev.desc}</td>
+
+                                    <td
+                                        className="text-center"
+                                        style={{ verticalAlign: "top", whiteSpace: "nowrap" }}
+                                    >
+                                        <button
+                                            className="btn btn-primary btn-sm me-1"
+                                            onClick={() => startEdit(ev)}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => deleteEvent(ev._id)}
+                                        >
+                                            Delete
+                                        </button>
                                     </td>
-                                ))}
-                                <td>
-                                    {editingId === ev._id ? (
-                                        <textarea
-                                            className="form-control form-control-sm"
-                                            rows={2}
-                                            value={form.desc}
-                                            onChange={e =>
-                                                setForm({ ...form, desc: e.target.value })
-                                            }
-                                        />
-                                    ) : ev.desc}
-                                </td>
-                                <td>
-                                    {editingId === ev._id ? (
-                                        <>
-                                            <button
-                                                className="btn btn-success btn-sm me-1"
-                                                onClick={saveEdit}
-                                            >
-                                                Save
-                                            </button>
-                                            <button
-                                                className="btn btn-secondary btn-sm"
-                                                onClick={cancelEdit}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                className="btn btn-primary btn-sm me-1"
-                                                onClick={() => startEdit(ev)}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                className="btn btn-danger btn-sm"
-                                                onClick={() => deleteEvent(ev._id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
+                                </tr>
+                            ))}
+                        </tbody>
                 </table>
             </div>
 
-            {/* pagination */}
-            <div className="d-flex justify-content-center mt-3">
-                <button
-                    className="btn btn-outline-secondary btn-sm me-2"
-                    disabled={page === 1}
-                    onClick={() => setPage(p => p - 1)}
-                >
-                    Prev
-                </button>
-                <span className="align-self-center">
-                    Page {page} / {totalPages}
-                </span>
-                <button
-                    className="btn btn-outline-secondary btn-sm ms-2"
-                    disabled={page === totalPages}
-                    onClick={() => setPage(p => p + 1)}
-                >
-                    Next
-                </button>
+            {/* ================== MOBILE CARD VIEW ================== */}
+            <div className="d-md-none">
+                {events.map(ev => (
+                    <div key={ev._id} className="card mb-3 shadow-sm">
+                        <div className="card-body">
+                            <h5>{ev.title}</h5>
+                            <p><strong>Venue:</strong> {ev.venue}</p>
+                            <p><strong>Date:</strong> {ev.date}</p>
+                            <p><strong>Time:</strong> {ev.time}</p>
+                            <p><strong>Presenter:</strong> {ev.presenter}</p>
+                            {ev.desc && <p className="text-muted">{ev.desc}</p>}
+
+                            <div className="d-flex gap-2 mt-3">
+                                <button
+                                    className="btn btn-primary btn-sm flex-fill"
+                                    onClick={() => startEdit(ev)}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    className="btn btn-danger btn-sm flex-fill"
+                                    onClick={() => deleteEvent(ev._id)}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            {/* ADD EVENT MODAL — React-only (no Bootstrap JS) */}
-            {showAddModal && (
+            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+
+            {/* ================== ADD / EDIT MODAL ================== */}
+            {(showAddModal || editingId) && (
                 <div
                     style={{
                         position: "fixed",
                         inset: 0,
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        zIndex: 1050,
+                        background: "rgba(0,0,0,0.5)",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center"
+                        justifyContent: "center",
+                        zIndex: 1050
                     }}
                 >
-                    <div
-                        style={{
-                            background: "#fff",
-                            borderRadius: 6,
-                            width: "100%",
-                            maxWidth: 700,
-                            padding: 20
-                        }}
-                    >
-                        <h5 className="mb-3">Add New Event</h5>
+                    <div style={{ background: "#fff", padding: 20, width: "100%", maxWidth: 600 }}>
+                        <h5>{editingId ? "Edit Event" : "Add Event"}</h5>
 
-                        {["title", "venue", "date", "time", "presenter"].map(k => (
+                        {Object.keys(emptyForm).map(k => (
                             <div className="mb-2" key={k}>
                                 <label className="form-label text-capitalize">{k}</label>
-                                <input
-                                    className="form-control"
-                                    value={form[k]}
-                                    onChange={e =>
-                                        setForm({ ...form, [k]: e.target.value })
-                                    }
-                                />
+                                {k === "desc" ? (
+                                    <textarea
+                                        className="form-control"
+                                        rows={3}
+                                        value={form[k]}
+                                        onChange={e => setForm({ ...form, [k]: e.target.value })}
+                                    />
+                                ) : (
+                                    <input
+                                        className="form-control"
+                                        value={form[k]}
+                                        onChange={e => setForm({ ...form, [k]: e.target.value })}
+                                    />
+                                )}
                             </div>
                         ))}
-
-                        <div className="mb-3">
-                            <label className="form-label">Description</label>
-                            <textarea
-                                className="form-control"
-                                rows={3}
-                                value={form.desc}
-                                onChange={e =>
-                                    setForm({ ...form, desc: e.target.value })
-                                }
-                            />
-                        </div>
 
                         <div className="text-end">
                             <button
                                 className="btn btn-secondary me-2"
-                                onClick={() => setShowAddModal(false)}
+                                onClick={() => {
+                                    cancelEdit();
+                                    setShowAddModal(false);
+                                }}
                             >
                                 Cancel
                             </button>
                             <button
                                 className="btn btn-success"
-                                onClick={saveNewEvent}
+                                onClick={editingId ? saveEdit : saveNewEvent}
                             >
                                 Save
                             </button>
