@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Navigate } from "react-router-dom";
+import './AdminEvents.css';
 
 const PAGE_SIZE = 10;
 
@@ -16,6 +17,7 @@ function AdminEvents({ user }) {
     const [showAddModal, setShowAddModal] = useState(false);
 
     const pageCache = useRef({});
+    const pageTopRef = useRef(null);
     
 
     const emptyForm = {
@@ -76,6 +78,10 @@ function AdminEvents({ user }) {
             fetchPage(page + 1, true);
         }
     }, [page, totalPages, fetchPage]);
+
+    useEffect(() => {
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [page]);
 
     /* ================== ACCESS CONTROL ================== */
     if (!user || user.role !== "admin") {
@@ -182,6 +188,30 @@ function AdminEvents({ user }) {
                 </button>
             </div>
 
+            {/* pagination - TOP */}
+            <div ref={pageTopRef} className="d-flex justify-content-center mt-3 mb-3">
+                <button
+                    className="btn btn-outline-secondary btn-sm me-2"
+                    disabled={page === 1}
+                    onClick={() => {
+                        setPage(p => p - 1);
+                        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                >
+                    Prev
+                </button>
+                <span className="align-self-center pagination-text">
+                    Page {page} / {totalPages}
+                </span>
+                <button
+                    className="btn btn-outline-secondary btn-sm ms-2"
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                >
+                    Next
+                </button>
+            </div>
+
             {/* table */}
             <div className="table-responsive">
                 <table className="table table-bordered table-sm w-100">
@@ -222,7 +252,7 @@ function AdminEvents({ user }) {
                                                 setForm({ ...form, desc: e.target.value })
                                             }
                                         />
-                                    ) : ev.desc}
+                                    ) : ev.desc && <div className="desc-scroll">{ev.desc}</div>}
                                 </td>
                                 <td>
                                     {editingId === ev._id ? (
@@ -263,22 +293,28 @@ function AdminEvents({ user }) {
                 </table>
             </div>
 
-            {/* pagination */}
+            {/* pagination - BOTTOM */}
             <div className="d-flex justify-content-center mt-3">
                 <button
                     className="btn btn-outline-secondary btn-sm me-2"
                     disabled={page === 1}
-                    onClick={() => setPage(p => p - 1)}
+                    onClick={() => {
+                        setPage(p => p - 1);
+                        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                 >
                     Prev
                 </button>
-                <span className="align-self-center">
+                <span className="align-self-center pagination-text">
                     Page {page} / {totalPages}
                 </span>
                 <button
                     className="btn btn-outline-secondary btn-sm ms-2"
                     disabled={page === totalPages}
-                    onClick={() => setPage(p => p + 1)}
+                    onClick={() => {
+                        setPage(p => p + 1);
+                        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                 >
                     Next
                 </button>

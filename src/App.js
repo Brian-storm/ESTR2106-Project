@@ -193,36 +193,37 @@ function App() {
 
             {/* Mobile Bottom Navigation */}
             {user ? (
-                <div className="d-lg-none bg-white border-top" style={{ zIndex: 1030 }}>
+                <div className="d-lg-none border-top" style={{ zIndex: 1030, backgroundColor: 'var(--bs-body-bg, #fff)', color: 'var(--bs-body-color, #000)' }}>
                     <div className="container">
                         <div className="row text-center py-2">
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/'>
                                     <i className="bi bi-house fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Home</small>
                                 </Link>
                             </div>
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/event'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/event'>
                                     <i className="bi bi-calendar-event fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Events</small>
                                 </Link>
                             </div>
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/map'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/map'>
                                     <i className="bi bi-map fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Map</small>
                                 </Link>
                             </div>
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/favorite'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/favorite'>
                                     <i className="bi bi-heart fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.75rem' }}>Favorites</small>
                                 </Link>
                             </div>
                             <div className="col">
                                 <button
-                                    className="text-decoration-none text-dark d-flex flex-column align-items-center border-0 bg-transparent w-100"
+                                    className="text-decoration-none d-flex flex-column align-items-center border-0 bg-transparent w-100"
+                                    style={{ color: 'inherit' }}
                                     onClick={async () => {
                                         await fetch('/api/logout', {
                                             method: 'POST',
@@ -244,27 +245,29 @@ function App() {
             {/* Extra Menu for Admin - Additional Bottom Menu */}
             {user && user.role === "admin" && (
                 <div
-                    className="d-lg-none bg-light border-top"
+                    className="d-lg-none border-top"
                     style={{
                         zIndex: 1025,
+                        backgroundColor: 'var(--bs-body-bg, #f8f9fa)',
+                        color: 'var(--bs-body-color, #000)'
                     }}
                 >
                     <div className="container">
                         <div className="row text-center py-2">
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to='/admin/events'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'var(--bs-body-color, #000)' }} to='/admin/events'>
                                     <i className="bi bi-tools fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.7rem' }}>Events</small>
                                 </Link>
                             </div>
                             <div className="col">
-                                <Link className="text-decoration-none text-primary d-flex flex-column align-items-center" to='/admin/users'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'var(--bs-body-color, #000)' }} to='/admin/users'>
                                     <i className="bi bi-people fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.7rem' }}>Users</small>
                                 </Link>
                             </div>
                             <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to='/location'>
+                                <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to='/location'>
                                     <i className="bi bi-geo-alt fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: '0.7rem' }}>Locations</small>
                                 </Link>
