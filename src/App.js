@@ -9,7 +9,6 @@ import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
-import View from './components/View';
 import Calendar from './components/CalendarView';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
@@ -173,17 +172,14 @@ function App() {
                     <Route path='/map' element={
                         user ? <Map /> : <Navigate to="/login" replace />
                     } />
-                    <Route path='/view/:venueId' element={
-                        user ? <View /> : <Navigate to="/login" replace />
-                    } />
-                    <Route path='/calendar' element={
-                        user ? <Calendar /> : <Navigate to="/login" replace />
-                    } />
                     <Route path='/favorite' element={
                         user ? <Favorite /> : <Navigate to="/login" replace />
                     } />
                     <Route path='/login' element={
                         user ? <Navigate to="/" replace /> : <Login setUser={setUser} />
+                    } />
+                    <Route path='/calendar' element={
+                        user ? <Calendar /> : <Navigate to="/login" replace />
                     } />
                     <Route path="/admin/events" element={
                         user && user.role === "admin" ? <AdminEvents user={user} /> : <Navigate to="/" replace />
