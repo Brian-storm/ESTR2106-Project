@@ -5,7 +5,7 @@ const path = require('path');
 const { XMLParser } = require('fast-xml-parser');
 const session = require('express-session')
 const argon2 = require('@node-rs/argon2');
-const { Event, Location, User, Comment } = require('./modules/models');
+const { Event, Location, User, Comment, AuditLog } = require('./modules/models');
 const { isPointInPolygon } = require("./utils");
 
 const PORT = 5000;
@@ -34,38 +34,6 @@ const fetchDistrictBoundaries = async () => {
     return data.features;
 }
 
-// ================== AUDIT LOG MODEL ==================
-const AuditLogSchema = new mongoose.Schema({
-    adminId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
-    adminUsername: {
-        type: String,
-        required: true
-    },
-    action: {
-        type: String,
-        enum: ["CREATE", "UPDATE", "DELETE"],
-        required: true
-    },
-    targetType: {
-        type: String,
-        enum: ["Event", "User"],
-        required: true
-    },
-    targetId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true
-    },
-    timestamp: {
-        type: Date,
-        default: Date.now
-    }
-});
-
-const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
 
 
 // Upon Successful Opening of the database

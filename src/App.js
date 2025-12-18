@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 
 import Home from './components/Home';
-import Location from './components/Location';
 import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
@@ -77,9 +76,6 @@ function App() {
                     <ul className="navbar-nav me-auto">
                         <li className="nav-item">
                             <Link className="nav-link" to='/'>Home</Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className="nav-link" to='/location'>Locations</Link>
                         </li>
                         <li className="nav-item">
                             <Link className="nav-link" to='/event'>Events</Link>
@@ -175,9 +171,6 @@ function App() {
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
                     } />
-                    <Route path='/location' element={
-                        user ? <Location /> : <Navigate to="/login" replace />
-                    } />
                     <Route path='/event' element={
                         user ? <Event /> : <Navigate to="/login" replace />
                     } />
@@ -218,13 +211,6 @@ function App() {
                                 <Link className="text-decoration-none d-flex flex-column align-items-center" style={{ color: 'inherit' }} to="/">
                                     <i className="bi bi-house fs-5"></i>
                                     <small className="mt-1" style={{ fontSize: "0.75rem" }}>Home</small>
-                                </Link>
-                            </div>
-
-                            <div className="col">
-                                <Link className="text-decoration-none text-dark d-flex flex-column align-items-center" to="/location">
-                                    <i className="bi bi-geo-alt fs-5"></i>
-                                    <small className="mt-1" style={{ fontSize: "0.75rem" }}>Locations</small>
                                 </Link>
                             </div>
 

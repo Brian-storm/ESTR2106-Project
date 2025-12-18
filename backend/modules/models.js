@@ -54,9 +54,42 @@ const CommentSchema = mongoose.Schema({
 });
 const Comment = mongoose.model("Comment", CommentSchema);
 
+// Model 5: Audit log
+const AuditLogSchema = new mongoose.Schema({
+    adminId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    adminUsername: {
+        type: String,
+        required: true
+    },
+    action: {
+        type: String,
+        enum: ["CREATE", "UPDATE", "DELETE"],
+        required: true
+    },
+    targetType: {
+        type: String,
+        enum: ["Event", "User"],
+        required: true
+    },
+    targetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now
+    }
+});
+const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
+
 module.exports = {
     Event,
     Location,
     User,
-    Comment
+    Comment,
+    AuditLog
 };
