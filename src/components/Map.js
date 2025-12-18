@@ -44,6 +44,8 @@ function Map() {
         setSelectedVenue(venueIndex);
         setIsPanelOpen(true);
       }
+    } else {
+      setIsPanelOpen(false);
     }
   }, [searchParams, venues]);
 
