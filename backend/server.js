@@ -255,7 +255,7 @@ app.get('/', (req, res) => {
 
 // Check Authentication
 app.get('/api/check-auth', (req, res) => {
-    if (req.session && req.session.userId) {
+    if (req.session && req.session.rememberMe && req.session.userId) {
         res.json({
             userId: req.session.userId,
             username: req.session.username,
@@ -351,6 +351,7 @@ app.post('/api/login', async (req, res) => {
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.role = user.role;
+        req.session.rememberMe = req.body.rememberMe;
 
         console.log('Session created successfully for user:', username);
 
@@ -515,14 +516,14 @@ app.post("/api/admin/events", async (req, res) => {
 
         /* ================== CREATE EVENT ================== */
         const newEvent = new Event({
-        eventId: crypto.randomUUID(),   // or uuidv4()
-        title: title.trim(),
-        venue: venue.trim(),
-        date,
-        time: time || "TBA",
-        presenter: presenter || "TBA",
-        desc: desc || ""
-    });
+            eventId: crypto.randomUUID(),   // or uuidv4()
+            title: title.trim(),
+            venue: venue.trim(),
+            date,
+            time: time || "TBA",
+            presenter: presenter || "TBA",
+            desc: desc || ""
+        });
 
         const saved = await newEvent.save();
         await logAdminAction(req, "CREATE", "Event", saved._id);
@@ -859,4 +860,18 @@ app.post("/api/locations/:locationId/comments", async (req, res) => {
         console.error("Error adding comment:", error);
         res.status(500).json({ success: false, message: "Failed to add comment" });
     }
+});
+
+// Extra Feature 1 - Chatbot
+const { chat } = require('./modules/chatbot');
+app.post('/api/chatbot', async (req, res) => {
+    const userInput = req.body.userInput;
+    const selectedVenues = req.body.selectedVenues;
+
+    if (!userInput) {
+        res.send("No user input");
+    }
+
+    const botResponse = await chat(userInput, selectedVenues);
+    res.send(botResponse);
 });

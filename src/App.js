@@ -9,10 +9,13 @@ import Event from './components/Event';
 import Map from './components/Map';
 import Favorite from './components/Favorite';
 import Login from './components/Login';
+
+import ChatWindow from './components/ChatWindow';
 import Calendar from './components/CalendarView';
 import AdminEvents from "./components/AdminEvents";
 import AdminUsers from "./components/AdminUsers";
 import AuditLog from "./components/AuditLog";
+
 
 import './App.css';
 
@@ -159,6 +162,9 @@ function App() {
 
             {/* Main Content - Adjusted padding for mobile */}
             <div className="main-content w-100 flex-grow-1 position-relative overflow-auto">
+                {/* Chat Window (always displayed after login) */}
+                {user && <ChatWindow user={user}/>}
+                
                 <Routes>
                     <Route path='/' element={
                         user ? <Home /> : <Navigate to="/login" replace />
