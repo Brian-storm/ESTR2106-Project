@@ -13,8 +13,8 @@
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
-  
-  transition: 
+
+  transition:
     opacity 0.3s ease,
     transform 0.4s cubic-bezier(0.68, -0.35, 0.365, 1.45),
     visibility 0.3s ease,
@@ -261,4 +261,52 @@
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+
+/* Dark mode button styling */
+[data-bs-theme="dark"] .btn-outline-danger {
+  border-color: #ff6b6b !important;
+  color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+  background-color: #ff6b6b !important;
+  color: white !important;
+  border-color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger i {
+  color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover i {
+  color: white !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  border-color: #8c7aff !important;
+  color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: #8c7aff !important;
+  color: white !important;
+  border-color: #8c7aff !important;
+}
+
+/* Dark mode table rows */
+[data-bs-theme="dark"] .chat-messages {
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #3d3d6c 100%) !important;
+}
+
+[data-bs-theme="dark"] .chat-window {
+  background: linear-gradient(145deg, #2d4059 0%, #1c2d3d 100%) !important;
+  border: 1px solid #3a506b;
+}
+
+[data-bs-theme="dark"] .message-content {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%) !important;
+  color: white;
+  box-shadow: 0 2px 5px rgba(108, 99, 255, 0.3);
 }

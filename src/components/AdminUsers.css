@@ -1,0 +1,296 @@
+/* AdminUsers Table Design - Unified with Home & Favorite */
+
+/* 1. Table styling */
+.table {
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* 2. Table header - Gradient design matching Home & Favorite */
+.table thead {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+}
+
+.table thead th {
+    background: transparent !important;
+    color: white !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 1rem;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+/* 3. Table body - Light mode (white background with dark text) */
+.table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+    background-color: #ffffff !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f5f5f5 !important;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #333 !important;
+}
+
+.table tbody tr span {
+    color: #333 !important;
+}
+
+.table tbody tr div {
+    color: #333 !important;
+}
+
+/* 4. Dark mode table styling */
+[data-bs-theme="dark"] .table tbody tr {
+    background-color: #4a5568 !important;
+}
+
+[data-bs-theme="dark"] .table tbody tr:hover {
+    background-color: #5a6578 !important;
+}
+
+[data-bs-theme="dark"] .table tbody td {
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .table tbody tr span {
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .table tbody tr div {
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-user {
+    background-color: #4a5568 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-user .form-control,
+[data-bs-theme="dark"] #modify-user .form-select {
+    background-color: #66748d !important;
+    border-color: #5a6578 !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] #modify-user .form-control:focus,
+[data-bs-theme="dark"] #modify-user .form-select:focus {
+    background-color: #7788a5 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+/* 5. Button styling - Light mode */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-secondary {
+    color: #333 !important;
+    border-color: #ddd !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa !important;
+    border-color: #ccc !important;
+    color: #000 !important;
+}
+
+.btn-outline-primary {
+    border-color: #6c63ff !important;
+    color: #6c63ff !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #6c63ff !important;
+    border-color: #6c63ff !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
+}
+
+.btn-outline-danger {
+    border-color: #dc3545 !important;
+    color: #dc3545 !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+}
+
+/* 6. Dark mode button styling */
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+    border-color: #8c7aff !important;
+    color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+    background-color: #8c7aff !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger {
+    border-color: #ff6b6b !important;
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+    background-color: #ff6b6b !important;
+    border-color: #ff6b6b !important;
+    color: white !important;
+}
+
+/* Action buttons - Remove filled backgrounds */
+.btn-primary, .btn-danger, .btn-success {
+    background-color: transparent !important;
+    border-color: currentColor !important;
+    color: inherit !important;
+}
+
+.btn-primary:hover {
+    background-color: rgba(108, 99, 255, 0.1) !important;
+    border-color: #6c63ff !important;
+    color: #6c63ff !important;
+}
+
+.btn-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    border-color: #dc3545 !important;
+    color: #dc3545 !important;
+}
+
+.btn-success:hover {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+    border-color: #28a745 !important;
+    color: #28a745 !important;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+    border-color: #8c7aff !important;
+    color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-primary:hover {
+    background-color: rgba(140, 122, 255, 0.2) !important;
+    color: #8c7aff !important;
+}
+
+[data-bs-theme="dark"] .btn-danger {
+    border-color: #ff6b6b !important;
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-danger:hover {
+    background-color: rgba(255, 107, 107, 0.2) !important;
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .btn-success {
+    border-color: #51cf66 !important;
+    color: #51cf66 !important;
+}
+
+[data-bs-theme="dark"] .btn-success:hover {
+    background-color: rgba(81, 207, 102, 0.2) !important;
+    color: #51cf66 !important;
+}
+
+/* 7. Modal styling */
+.modal-content {
+    background-color: var(--bs-body-bg, #fff) !important;
+    color: var(--bs-body-color, #000) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6) !important;
+    background-color: var(--bs-body-bg, #fff) !important;
+}
+
+.modal-body {
+    background-color: var(--bs-body-bg, #fff) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-border-color, #dee2e6) !important;
+    background-color: var(--bs-body-bg, #fff) !important;
+}
+
+/* 8. Pagination text */
+.pagination-text {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+[data-bs-theme="dark"] .pagination-text {
+    color: white !important;
+}
+
+/* 9. Form controls */
+.form-control, .form-select {
+    border: 1px solid #ddd !important;
+    background-color: white !important;
+    color: #333 !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #6c63ff !important;
+    box-shadow: 0 0 0 0.2rem rgba(108, 99, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #4a5568 !important;
+    border-color: #5a6578 !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: #4a5568 !important;
+    border-color: #8c7aff !important;
+    color: white !important;
+}
+
+/* 10. Responsive design */
+@media (max-width: 768px) {
+    .table thead th {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .table tbody td {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+}

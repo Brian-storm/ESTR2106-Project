@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Navigate } from "react-router-dom";
+import './AdminEvents.css';
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +41,8 @@ function AdminEvents({ user }) {
     const [showAddModal, setShowAddModal] = useState(false);
 
     const pageCache = useRef({});
+    const pageTopRef = useRef(null);
+
 
     const emptyForm = {
         title: "",
@@ -94,6 +97,15 @@ function AdminEvents({ user }) {
         if (page < totalPages) fetchPage(page + 1, true);
     }, [page, totalPages, fetchPage]);
 
+    useEffect(() => {
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [page]);
+
+    useEffect(() => {
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [page]);
+
+    /* ================== ACCESS CONTROL ================== */
     if (!user || user.role !== "admin") {
         return <Navigate to="/" replace />;
     }
@@ -180,14 +192,33 @@ function AdminEvents({ user }) {
                 </button>
             </div>
 
-            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
-
-            {/* ================== DESKTOP TABLE ================== */}
-            <div className="d-none d-md-block">
-                <table
-                    className="table table-bordered table-sm align-middle mb-0"
-                    style={{ tableLayout: "fixed", width: "100%" }}
+            {/* pagination - TOP */}
+            <div ref={pageTopRef} className="d-flex justify-content-center mt-3 mb-3">
+                <button
+                    className="btn btn-outline-secondary btn-sm me-2"
+                    disabled={page === 1}
+                    onClick={() => {
+                        setPage(p => p - 1);
+                        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                 >
+                    Prev
+                </button>
+                <span className="align-self-center pagination-text">
+                    Page {page} / {totalPages}
+                </span>
+                <button
+                    className="btn btn-outline-secondary btn-sm ms-2"
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                >
+                    Next
+                </button>
+            </div>
+
+            {/* table */}
+            <div className="table-responsive">
+                <table className="table table-bordered table-sm w-100">
                     <thead className="table-light">
                         <tr>
                             <th style={{ width: "16%" }}>Title</th>
@@ -199,73 +230,44 @@ function AdminEvents({ user }) {
                             <th style={{ width: "10%" }}>Actions</th>
                         </tr>
                     </thead>
-                        <tbody>
-                            {events.map(ev => (
-                                <tr key={ev._id}>
-                                    <td style={cellStyle}>{ev.title}</td>
-                                    <td style={cellStyle}>{ev.venue}</td>
+                    <tbody>
+                        {events.map(ev => (
+                            <tr key={ev._id}>
+                                <td style={cellStyle}>{ev.title}</td>
+                                <td style={cellStyle}>{ev.venue}</td>
 
-                                    <td style={cellStyle}>{ev.date}</td>
-                                    <td style={cellStyle}>{ev.time}</td>
+                                <td style={cellStyle}>{ev.date}</td>
+                                <td style={cellStyle}>{ev.time}</td>
 
-                                    <td style={cellStyle}>{ev.presenter}</td>
-                                    <td style={cellStyle}>{ev.desc}</td>
+                                <td style={cellStyle}>{ev.presenter}</td>
+                                <td style={cellStyle}>{ev.desc}</td>
 
-                                    <td
-                                        className="text-center"
-                                        style={{ verticalAlign: "top", whiteSpace: "nowrap" }}
+                                <td
+                                    className="text-center"
+                                    style={{ verticalAlign: "top", whiteSpace: "nowrap" }}
+                                >
+                                    <button
+                                        className="btn btn-primary btn-sm me-1"
+                                        onClick={() => startEdit(ev)}
                                     >
-                                        <button
-                                            className="btn btn-primary btn-sm me-1"
-                                            onClick={() => startEdit(ev)}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() => deleteEvent(ev._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                                        Edit
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => deleteEvent(ev._id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             </div>
 
-            {/* ================== MOBILE CARD VIEW ================== */}
-            <div className="d-md-none">
-                {events.map(ev => (
-                    <div key={ev._id} className="card mb-3 shadow-sm">
-                        <div className="card-body">
-                            <h5>{ev.title}</h5>
-                            <p><strong>Venue:</strong> {ev.venue}</p>
-                            <p><strong>Date:</strong> {ev.date}</p>
-                            <p><strong>Time:</strong> {ev.time}</p>
-                            <p><strong>Presenter:</strong> {ev.presenter}</p>
-                            {ev.desc && <p className="text-muted">{ev.desc}</p>}
-
-                            <div className="d-flex gap-2 mt-3">
-                                <button
-                                    className="btn btn-primary btn-sm flex-fill"
-                                    onClick={() => startEdit(ev)}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    className="btn btn-danger btn-sm flex-fill"
-                                    onClick={() => deleteEvent(ev._id)}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <div className="mt-3 mb-5">
+                <Pagination page={page} totalPages={totalPages} setPage={setPage} />
             </div>
-
-            <Pagination page={page} totalPages={totalPages} setPage={setPage} />
 
             {/* ================== ADD / EDIT MODAL ================== */}
             {(showAddModal || editingId) && (
@@ -280,7 +282,7 @@ function AdminEvents({ user }) {
                         zIndex: 1050
                     }}
                 >
-                    <div style={{ background: "#fff", padding: 20, width: "100%", maxWidth: 600 }}>
+                    <div id="modify-event" style={{ background: "#fff", padding: 20, width: "100%", maxWidth: 600 }}>
                         <h5>{editingId ? "Edit Event" : "Add Event"}</h5>
 
                         {Object.keys(emptyForm).map(k => (

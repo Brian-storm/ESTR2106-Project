@@ -101,6 +101,12 @@ function Home() {
     // 过滤函数 - 结合名称搜索和距离筛选
     // 更新过滤函数
     const filterVenues = (venues) => {
+        // 确保venues是数组
+        if (!Array.isArray(venues)) {
+            console.warn('filterVenues received non-array:', venues);
+            return [];
+        }
+        
         let filtered = venues;
         
         // 1. 名称搜索
@@ -139,6 +145,12 @@ function Home() {
     const getSortedAndFilteredVenues = () => {
         // 1. 先过滤
         let filteredVenues = filterVenues(venues);
+        
+        // 确保返回数组
+        if (!Array.isArray(filteredVenues)) {
+            console.warn('getSortedAndFilteredVenues: filteredVenues is not an array', filteredVenues);
+            return [];
+        }
         
         // 2. 再排序
         if (!sortConfig.key) return filteredVenues;
