@@ -4,7 +4,7 @@ import MarkerIcon from "leaflet/dist/images/marker-icon.png";
 import { useCallback, useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 const icon = L.icon({
   iconUrl: MarkerIcon,
@@ -99,6 +99,7 @@ function Map() {
             onClick={() => navigate(-1)}
             className="link-secondary link-opacity-100-hover link-underline-opacity-0"
             style={{
+              all: "unset",
               cursor: "pointer",
             }}
           >
@@ -129,6 +130,11 @@ function Map() {
                 <p>{venues[selectedVenue].description}</p>
               </div>
             )}
+            <div>
+              <Link to={`/event?venueIds=${venues[selectedVenue].venueId}`}>
+                Events at this location
+              </Link>
+            </div>
             <div className="d-flex flex-column mt-3 align-items-start w-100">
               <strong>Comments</strong>
               {currentVenueComments &&
