@@ -815,16 +815,48 @@ app.delete('/api/clearFavorites', checkSession, async (req, res) => {
 });
 
 app.get("/api/locations", async (req, res) => {
-    let venueIds = req.query.venueIds ? req.query.venueIds.split(',') : [];
     try {
-        const locations = venueIds.length > 0 ? await Location.find({ venueId: { $in: venueIds } }) : await Location.find({});
-        await Promise.all(venueIds.map(async (venueId, index) => {
-            locations[index]._doc.eventCount = await Event.countDocuments({ venueId });
-        }));
+        const venueIds = req.query.venueIds
+            ? req.query.venueIds.split(",")
+            : [];
+
+        const matchStage =
+            venueIds.length > 0
+                ? { venueId: { $in: venueIds } }
+                : {};
+
+        const locations = await Location.aggregate([
+            { $match: matchStage },
+
+            {
+                $lookup: {
+                    from: "events",
+                    localField: "_id",
+                    foreignField: "venue",
+                    as: "events"
+                }
+            },
+
+            {
+                $addFields: {
+                    eventCount: { $size: "$events" }
+                }
+            },
+
+            {
+                $project: {
+                    events: 0
+                }
+            }
+        ]);
+
         res.json(locations);
+
     } catch (error) {
         console.error("Error fetching locations:", error);
-        res.status(500).json({ error: "Failed to fetch locations" });
+        res.status(500).json({
+            error: "Failed to fetch locations"
+        });
     }
 });
 
