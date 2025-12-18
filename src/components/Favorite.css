@@ -182,7 +182,7 @@
 }
 
 .favorite-sort-btn-events {
-    min-width: 160px !important;
+    width: 200px !important;
     white-space: nowrap;
 }
 
