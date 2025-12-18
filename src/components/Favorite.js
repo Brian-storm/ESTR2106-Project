@@ -163,7 +163,7 @@ function Favorite() {
     if (error) return <div className="alert alert-danger">Error: {error}</div>;
 
     return (
-        <div className="container mt-4">
+        <div className="container-md mt-4">
             {/* 搜索栏 */}
             <div className="mb-4">
                 <div className="row">

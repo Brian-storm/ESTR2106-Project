@@ -247,7 +247,7 @@ a.text-primary:hover {
     
     .table-responsive {
         border-radius: 12px;
-        overflow: hidden;
+        /* overflow: hidden; */
     }
     
     .table-dark th {
